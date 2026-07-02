@@ -17,7 +17,7 @@ SUPPORTED_LANGUAGES = ["es", "en", "it", "de"]
 
 # Voces Piper recomendadas por idioma. La primera es la usada por defecto.
 RECOMMENDED_VOICES: dict[str, list[str]] = {
-    "es": ["es_ES-davefx-medium", "es_MX-claude-high", "es_ES-sharvard-medium"],
+    "es": ["es_ES-sharvard-medium", "es_MX-claude-high", "es_ES-davefx-medium"],
     "en": ["en_US-lessac-medium", "en_GB-alan-medium", "en_US-amy-medium"],
     "it": ["it_IT-paola-medium", "it_IT-riccardo-x_low"],
     "de": ["de_DE-thorsten-medium", "de_DE-eva_k-x_low"],

@@ -37,15 +37,28 @@ class AudioSink:
     def play(self, wav: bytes) -> None:
         self._stopped.clear()
         if sys.platform == "win32":
+            import os
+            import tempfile
             import winsound
 
-            winsound.PlaySound(
-                wav, winsound.SND_MEMORY | winsound.SND_ASYNC | winsound.SND_NODEFAULT
-            )
-            interrupted = self._stopped.wait(wav_duration(wav) + 0.05)
-            if interrupted:
-                # Un sonido nuevo siempre cancela al anterior: garantiza el corte.
-                winsound.PlaySound(None, winsound.SND_PURGE)
+            # winsound NO permite SND_MEMORY + SND_ASYNC (RuntimeError), así
+            # que se pasa por un archivo temporal: async desde archivo sí vale.
+            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            try:
+                tmp.write(wav)
+                tmp.close()
+                winsound.PlaySound(
+                    tmp.name,
+                    winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT,
+                )
+                interrupted = self._stopped.wait(wav_duration(wav) + 0.05)
+                if interrupted:
+                    winsound.PlaySound(None, winsound.SND_PURGE)
+            finally:
+                try:
+                    os.unlink(tmp.name)
+                except OSError:
+                    pass  # si el sistema aún lo retiene, queda en %TEMP%
         else:
             self._proc = subprocess.Popen(
                 ["aplay", "-q", "-"],
