@@ -19,6 +19,10 @@ dependencies = [
     # Dictado (voz -> texto, 100% local)
     "sounddevice==0.5.5",
     "faster-whisper==1.2.1",
+    # Fijado en 4.4.0: es la última serie que usa cuDNN 8 + CUDA 12, el
+    # mismo set de DLLs que traen las builds de Purfview/Subtitle Edit,
+    # permitiendo reutilizarlas para GPU sin descargar nada.
+    "ctranslate2==4.4.0",
 ]
 
 [project.optional-dependencies]

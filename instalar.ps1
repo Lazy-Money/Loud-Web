@@ -36,6 +36,10 @@ $T = @{
     dev_menu    = "  1) CPU (cualquier PC)`n  2) GPU NVIDIA/CUDA (mas rapido)"
     gpu_libs    = "La GPU necesita las librerias CUDA de NVIDIA (~600 MB via pip). Instalarlas ahora? [s/N]"
     gpu_found   = "Librerias CUDA encontradas junto a tu modelo: se reutilizan, no hay que descargar nada."
+    gpu_menu    = "  1) Descargar e instalar las librerias CUDA (~600 MB via pip)`n  2) Indicar la carpeta donde ya tengo las DLLs (cublas64*.dll)`n  3) No hacer nada: usar CPU"
+    gpu_dir     = "Carpeta de las DLLs de CUDA"
+    gpu_dir_bad = "No hay cublas64*.dll ahi: el dictado queda en CPU."
+    gpu_cpu     = "El dictado usara CPU."
     dl_model    = "Descargando el modelo de dictado..."
     shortcuts   = "Accesos directos"
     autostart   = "Iniciar LoudVox automaticamente con Windows? [S/n]"
@@ -64,6 +68,10 @@ $T = @{
     dev_menu    = "  1) CPU (any PC)`n  2) NVIDIA/CUDA GPU (faster)"
     gpu_libs    = "GPU needs NVIDIA's CUDA libraries (~600 MB via pip). Install them now? [y/N]"
     gpu_found   = "CUDA libraries found next to your model: reusing them, nothing to download."
+    gpu_menu    = "  1) Download and install the CUDA libraries (~600 MB via pip)`n  2) Point to the folder where I already have the DLLs (cublas64*.dll)`n  3) Do nothing: use CPU"
+    gpu_dir     = "CUDA DLLs folder"
+    gpu_dir_bad = "No cublas64*.dll there: dictation stays on CPU."
+    gpu_cpu     = "Dictation will use CPU."
     dl_model    = "Downloading the dictation model..."
     shortcuts   = "Shortcuts"
     autostart   = "Start LoudVox automatically with Windows? [Y/n]"
@@ -92,6 +100,10 @@ $T = @{
     dev_menu    = "  1) CPU (qualsiasi PC)`n  2) GPU NVIDIA/CUDA (piu veloce)"
     gpu_libs    = "La GPU richiede le librerie CUDA di NVIDIA (~600 MB via pip). Installarle ora? [s/N]"
     gpu_found   = "Librerie CUDA trovate accanto al modello: riutilizzate, niente da scaricare."
+    gpu_menu    = "  1) Scaricare e installare le librerie CUDA (~600 MB via pip)`n  2) Indicare la cartella dove ho gia le DLL (cublas64*.dll)`n  3) Niente: usare la CPU"
+    gpu_dir     = "Cartella delle DLL CUDA"
+    gpu_dir_bad = "Nessuna cublas64*.dll li: la dettatura resta su CPU."
+    gpu_cpu     = "La dettatura usera la CPU."
     dl_model    = "Scaricamento del modello di dettatura..."
     shortcuts   = "Collegamenti"
     autostart   = "Avviare LoudVox automaticamente con Windows? [S/n]"
@@ -120,6 +132,10 @@ $T = @{
     dev_menu    = "  1) CPU (jeder PC)`n  2) NVIDIA/CUDA-GPU (schneller)"
     gpu_libs    = "Die GPU benoetigt NVIDIAs CUDA-Bibliotheken (~600 MB via pip). Jetzt installieren? [j/N]"
     gpu_found   = "CUDA-Bibliotheken neben dem Modell gefunden: werden wiederverwendet, kein Download noetig."
+    gpu_menu    = "  1) CUDA-Bibliotheken herunterladen und installieren (~600 MB via pip)`n  2) Ordner angeben, in dem die DLLs schon liegen (cublas64*.dll)`n  3) Nichts tun: CPU verwenden"
+    gpu_dir     = "Ordner der CUDA-DLLs"
+    gpu_dir_bad = "Keine cublas64*.dll dort: Diktat bleibt auf CPU."
+    gpu_cpu     = "Diktat verwendet die CPU."
     dl_model    = "Diktatmodell wird geladen..."
     shortcuts   = "Verknuepfungen"
     autostart   = "LoudVox automatisch mit Windows starten? [J/n]"
@@ -202,25 +218,38 @@ try {
         $device = "cpu"
         if ($d -eq "2") {
             $device = "cuda"
-            # Buscar DLLs de CUDA junto al modelo (Purfview/Subtitle Edit las
-            # trae en la raiz de su carpeta, 2 niveles arriba del modelo)
-            $dllsFound = $false
+            # 1. BUSCAR primero: recursivamente cerca del modelo (Purfview
+            #    guarda cublas/cudnn en _xxl_data\torch\lib, carpeta lateral)
+            $dllDir = $null
             if ($op -eq "3" -and $ruta) {
                 $probe = $ruta
                 foreach ($i in 1..3) {
-                    if (Get-ChildItem -Path $probe -Filter "cublas64*.dll" -ErrorAction SilentlyContinue) {
-                        $dllsFound = $true; break
-                    }
+                    $hit = Get-ChildItem -Path $probe -Recurse -Filter "cublas64*.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+                    if ($hit) { $dllDir = $hit.DirectoryName; break }
                     $probe = Split-Path $probe -Parent
                     if (-not $probe) { break }
                 }
             }
-            if ($dllsFound) {
-                Write-Host $M.gpu_found -ForegroundColor Green
+            if ($dllDir) {
+                Write-Host "$($M.gpu_found)  [$dllDir]" -ForegroundColor Green
+                python -c "from loudvox.config import load, save; cfg = load(); cfg.stt_dll_dir = r'$dllDir'; save(cfg)"
             } else {
-                $g = Read-Host $M.gpu_libs
-                if ($g -match "^$yes") {
+                # 2. No estan: instalar / indicar carpeta / seguir con CPU
+                Write-Host $M.gpu_menu
+                $g = Read-Host "$($M.option) [1/2/3]"
+                if ($g -eq "1") {
                     python -m pip install --quiet nvidia-cublas-cu12 nvidia-cudnn-cu12
+                } elseif ($g -eq "2") {
+                    $dir = Read-Host $M.gpu_dir
+                    if (Get-ChildItem -Path $dir -Filter "cublas64*.dll" -ErrorAction SilentlyContinue) {
+                        python -c "from loudvox.config import load, save; cfg = load(); cfg.stt_dll_dir = r'$dir'; save(cfg)"
+                    } else {
+                        Write-Host $M.gpu_dir_bad -ForegroundColor Yellow
+                        $device = "cpu"
+                    }
+                } else {
+                    Write-Host $M.gpu_cpu
+                    $device = "cpu"
                 }
             }
         }

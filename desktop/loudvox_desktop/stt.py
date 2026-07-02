@@ -96,15 +96,29 @@ class Transcriber:
         if self.dll_dir:
             add(self.dll_dir)
 
-        # 1. Junto al modelo (ruta local tipo Purfview). Su estructura es
-        #    Purfview-Whisper-Faster\           <- acá viven cublas/cudnn
-        #      _models\faster-whisper-large-v2\ <- acá está model.bin
-        #    así que hay que subir hasta 2 niveles desde el modelo.
+        # 1. Cerca del modelo (ruta local tipo Purfview). Estructura real:
+        #    Purfview-Whisper-Faster\
+        #      _models\faster-whisper-large-v2\   <- model.bin
+        #      _xxl_data\torch\lib\               <- cublas/cudnn (¡lateral!)
+        #    Subimos hasta 2 niveles y buscamos recursivamente ahí adentro.
         if os.path.isdir(self.model_size):
+            from pathlib import Path
+
+            ancestors = []
             d = os.path.abspath(self.model_size)
             for _ in range(3):
                 add(d)
+                ancestors.append(d)
                 d = os.path.dirname(d)
+            for pattern in ("cublas64*.dll", "cudnn64*.dll"):
+                for root in ancestors:
+                    try:
+                        hit = next(Path(root).rglob(pattern), None)
+                    except OSError:
+                        hit = None
+                    if hit:
+                        add(str(hit.parent))
+                        break
 
         # 2. Paquetes pip de NVIDIA
         try:
