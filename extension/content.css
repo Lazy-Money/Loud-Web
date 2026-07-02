@@ -1,0 +1,6 @@
+.loudvox-reading {
+  background: rgba(255, 213, 79, 0.45) !important;
+  outline: 2px solid rgba(255, 179, 0, 0.9) !important;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}

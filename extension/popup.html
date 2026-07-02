@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      width: 280px;
+      margin: 0;
+      padding: 14px;
+      font-size: 13px;
+    }
+    h1 { font-size: 15px; margin: 0 0 4px; }
+    .status { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; color: #555; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #bbb; }
+    .dot.ok { background: #34a853; }
+    .dot.err { background: #ea4335; }
+    label { display: block; margin: 10px 0 3px; font-weight: 600; }
+    select, input[type="range"] { width: 100%; }
+    .speed-row { display: flex; align-items: center; gap: 8px; }
+    .speed-row input { flex: 1; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 14px; }
+    button {
+      padding: 7px 4px; border: 1px solid #ccc; border-radius: 6px;
+      background: #f6f6f6; cursor: pointer; font-size: 12px;
+    }
+    button:hover { background: #ececec; }
+    button.stop { grid-column: span 2; background: #fdecea; border-color: #f5c6c2; }
+    .hint { margin-top: 10px; color: #888; font-size: 11px; line-height: 1.4; }
+    .hint code { background: #f2f2f2; padding: 0 3px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>LoudVox</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="status-text">Buscando motor…</span></div>
+
+  <label for="language">Idioma</label>
+  <select id="language">
+    <option value="es">Español</option>
+    <option value="en">English</option>
+    <option value="it">Italiano</option>
+    <option value="de">Deutsch</option>
+  </select>
+
+  <label for="voice">Voz</label>
+  <select id="voice"><option value="">(por defecto del idioma)</option></select>
+
+  <label for="speed">Velocidad <span id="speed-val">1.0×</span></label>
+  <div class="speed-row">
+    <input type="range" id="speed" min="0.5" max="3" step="0.1" value="1" />
+  </div>
+
+  <div class="buttons">
+    <button id="read-selection">▶ Leer selección</button>
+    <button id="read-from-here">⏩ Desde aquí</button>
+    <button id="stop" class="stop">⏹ Detener</button>
+  </div>
+
+  <p class="hint">
+    Atajos (personalizables en <code>brave://extensions/shortcuts</code>):
+    Alt+R leer selección · Alt+A desde aquí · Alt+S detener.<br />
+    Motor: <code>loudvox serve</code> debe estar corriendo.
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

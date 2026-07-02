@@ -42,7 +42,7 @@ Readvox/     Material de referencia (snapshot de readvox.com).
 | Fase | Entregable | Estado |
 |---|---|---|
 | 1 | Motor TTS: Piper, 4 idiomas, velocidad, diccionarios, API local, CLI | ✅ |
-| 2 | Extensión Brave: leer selección, leer desde aquí, resaltado | ⏳ |
+| 2 | Extensión Brave: leer selección, leer desde aquí, resaltado | ✅ |
 | 3 | Cliente escritorio: hotkeys globales, portapapeles, PDF/txt/md | ⏳ |
 | 4 | Dictado: whisper.cpp local, escritura en el input activo | ⏳ |
 | 5 | Tono de voz (grave/agudo), motor Kokoro opcional | ⏳ |
@@ -57,5 +57,5 @@ Ver [engine/README.md](engine/README.md).
 - [Readvox](https://readvox.com) — UX de lectura (comercial, nube).
 - [Verbify-TTS](https://github.com/MattePalte/Verbify-TTS) — hotkeys a nivel OS + diccionario CSV (MIT).
 - [OpenWhispr](https://github.com/OpenWhispr/openwhispr) — arquitectura de dictado local (MIT).
-- [Piper](https://github.com/rhasspy/piper) — TTS liviano (MIT). Motor por defecto.
+- [Piper](https://github.com/OHF-Voice/piper1-gpl) — TTS liviano (GPL-3, por incluir espeak-ng). Motor por defecto.
 - [Chatterbox](https://github.com/resemble-ai/chatterbox) — clonación de voz (MIT). Módulo opcional.

@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "LoudVox",
+  "version": "0.1.0",
+  "description": "Lector de texto en voz alta, 100% local. Requiere el motor LoudVox corriendo (loudvox serve).",
+  "permissions": ["storage", "offscreen"],
+  "host_permissions": ["http://127.0.0.1:5089/*"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "LoudVox" },
+  "commands": {
+    "read-selection": {
+      "suggested_key": { "default": "Alt+R" },
+      "description": "Leer el texto seleccionado"
+    },
+    "read-from-here": {
+      "suggested_key": { "default": "Alt+A" },
+      "description": "Leer desde la selección en adelante"
+    },
+    "stop-reading": {
+      "suggested_key": { "default": "Alt+S" },
+      "description": "Detener la lectura"
+    }
+  }
+}
