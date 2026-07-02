@@ -19,13 +19,19 @@ máquina: la extensión solo habla con `http://127.0.0.1:5089`.
 
 | Atajo | Acción |
 |---|---|
-| `Alt+R` | Leer el texto seleccionado |
-| `Alt+A` | Leer desde la selección en adelante (con resaltado y auto-scroll) |
-| `Alt+S` | Detener |
+| `Ctrl+Shift+L` | Leer el texto seleccionado |
+| `Ctrl+Shift+Espacio` | Leer desde la selección en adelante (con resaltado y auto-scroll) |
+| `Ctrl+Shift+X` | Detener |
 
 **Personalizar atajos**: `brave://extensions/shortcuts` → asigná la
 combinación que quieras a cada acción (cualquier combinación de 2+ teclas
-que Brave permita).
+que Brave permita). Nota: Brave no acepta `Ctrl+Alt+...` para extensiones
+(reservado por AltGr); sí acepta `Ctrl+Shift+...` y `Alt+Shift+...`.
+
+**Si actualizás la extensión** (nueva versión de esta carpeta): en
+`brave://extensions` tocá el botón de recarga (⟳) de LoudVox, y recargá
+también las pestañas ya abiertas o usá los atajos directamente (la extensión
+se auto-inyecta si hace falta).
 
 **Popup** (clic en el ícono): estado del motor, idioma, voz, velocidad, y los
 mismos tres botones para usar con el mouse.

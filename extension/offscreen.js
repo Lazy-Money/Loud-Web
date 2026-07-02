@@ -35,6 +35,8 @@ function playUrl(url) {
 
 async function playBlocks(blocks, settings, highlight) {
   const mySession = ++session;
+  let played = 0;
+  let lastError = "";
   let next = synthesize(blocks[0], settings);
 
   for (let i = 0; i < blocks.length; i++) {
@@ -42,6 +44,7 @@ async function playBlocks(blocks, settings, highlight) {
     try {
       url = await next;
     } catch (e) {
+      lastError = e.message;
       console.warn("LoudVox: fallo al sintetizar bloque", i, e.message);
     }
     // Prefetch del siguiente bloque mientras suena el actual.
@@ -62,6 +65,7 @@ async function playBlocks(blocks, settings, highlight) {
     });
     try {
       await playUrl(url);
+      played++;
     } catch (e) {
       console.warn("LoudVox: reproducción falló en bloque", i, e.message);
     } finally {
@@ -70,6 +74,16 @@ async function playBlocks(blocks, settings, highlight) {
   }
 
   if (mySession === session) {
+    if (played === 0) {
+      const detail = lastError.includes("Failed to fetch")
+        ? "Motor no encontrado. Ejecutá en una terminal: loudvox serve"
+        : lastError || "Error desconocido";
+      chrome.runtime.sendMessage({
+        type: "lv-error",
+        target: "background",
+        message: `No se pudo reproducir: ${detail}`,
+      });
+    }
     chrome.runtime.sendMessage({ type: "lv-ended", target: "background" });
   }
 }

@@ -1,10 +1,15 @@
 {
   "manifest_version": 3,
   "name": "LoudVox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lector de texto en voz alta, 100% local. Requiere el motor LoudVox corriendo (loudvox serve).",
-  "permissions": ["storage", "offscreen"],
-  "host_permissions": ["http://127.0.0.1:5089/*"],
+  "permissions": ["storage", "offscreen", "scripting", "notifications"],
+  "host_permissions": ["http://127.0.0.1:5089/*", "<all_urls>"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -14,18 +19,26 @@
     }
   ],
   "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "LoudVox" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LoudVox",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
   "commands": {
     "read-selection": {
-      "suggested_key": { "default": "Alt+R" },
+      "suggested_key": { "default": "Ctrl+Shift+L" },
       "description": "Leer el texto seleccionado"
     },
     "read-from-here": {
-      "suggested_key": { "default": "Alt+A" },
+      "suggested_key": { "default": "Ctrl+Shift+Space" },
       "description": "Leer desde la selección en adelante"
     },
     "stop-reading": {
-      "suggested_key": { "default": "Alt+S" },
+      "suggested_key": { "default": "Ctrl+Shift+X" },
       "description": "Detener la lectura"
     }
   }

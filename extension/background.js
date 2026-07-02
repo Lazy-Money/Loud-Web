@@ -1,8 +1,16 @@
 // LoudVox service worker: orquesta lectura entre la pestaña activa,
 // el documento offscreen (audio) y el motor local (http://127.0.0.1:5089).
 
-const ENGINE = "http://127.0.0.1:5089";
 let currentTabId = null;
+
+function notify(message) {
+  chrome.notifications.create({
+    type: "basic",
+    iconUrl: "icons/icon128.png",
+    title: "LoudVox",
+    message,
+  });
+}
 
 async function ensureOffscreen() {
   const has = await chrome.offscreen.hasDocument();
@@ -21,6 +29,18 @@ async function getSettings() {
   return { ...defaults, ...stored };
 }
 
+// Pide los bloques al content script; si no está (pestaña abierta antes de
+// instalar la extensión), lo inyecta y reintenta.
+async function collectFromTab(tabId, mode) {
+  try {
+    return await chrome.tabs.sendMessage(tabId, { type: "lv-collect", mode });
+  } catch (_) {
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+    await chrome.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
+    return await chrome.tabs.sendMessage(tabId, { type: "lv-collect", mode });
+  }
+}
+
 async function startReading(mode, tabId) {
   const tab =
     tabId != null
@@ -31,17 +51,20 @@ async function startReading(mode, tabId) {
 
   let collected;
   try {
-    collected = await chrome.tabs.sendMessage(tab.id, {
-      type: "lv-collect",
-      mode,
-    });
+    collected = await collectFromTab(tab.id, mode);
   } catch (e) {
-    // Página sin content script (chrome://, PDF viewer, etc.)
-    console.warn("LoudVox: no se pudo leer esta página:", e.message);
+    // Página vedada para extensiones: brave://, chrome://, visor de PDF, Web Store.
+    notify(
+      "No se puede leer esta página (las páginas internas del navegador y el " +
+        "visor de PDF están bloqueados para extensiones)."
+    );
     return;
   }
   const blocks = (collected?.blocks || []).map((b) => b.text).filter(Boolean);
-  if (blocks.length === 0) return;
+  if (blocks.length === 0) {
+    if (mode === "selection") notify("No hay texto seleccionado.");
+    return;
+  }
 
   const settings = await getSettings();
   await ensureOffscreen();
@@ -77,6 +100,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         .catch(() => {});
     } else if (msg.type === "lv-ended" && currentTabId != null) {
       chrome.tabs.sendMessage(currentTabId, { type: "lv-clear" }).catch(() => {});
+    } else if (msg.type === "lv-error") {
+      notify(msg.message);
     } else if (msg.type === "lv-start") {
       startReading(msg.mode, msg.tabId).then(() => sendResponse({}));
       return true; // respuesta asíncrona
