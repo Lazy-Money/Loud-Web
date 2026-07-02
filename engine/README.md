@@ -27,6 +27,12 @@ loudvox download de_DE-thorsten-medium
 Cada voz pesa ~20-75 MB y queda guardada localmente. Después de esto podés
 desconectar internet: todo sigue funcionando.
 
+**¿Querés más voces?** Escuchá el catálogo completo (100+ voces, todos los
+idiomas) en https://rhasspy.github.io/piper-samples/ y bajá cualquiera por
+su nombre: `loudvox download es_ES-mls_10246-medium`. También podés soltar
+a mano cualquier par `.onnx` + `.onnx.json` compatible con Piper en tu
+carpeta de voces (la muestra `loudvox config`) y aparece en los menús.
+
 ## Uso
 
 ```bash
