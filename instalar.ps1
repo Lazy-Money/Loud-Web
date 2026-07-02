@@ -157,17 +157,24 @@ try {
         if ($r -match "^$yes") { $langs += $code }
     }
     if ($langs.Count -eq 0) {
-        Write-Host $M.none_chosen -ForegroundColor Yellow
-        $langs = @("en")
+        # Sin elecciones: si ya hay voces instaladas (reinstalacion), NO tocar
+        # nada; solo si no hay ninguna, instalar ingles como minimo.
+        $installed = python -c "from loudvox.config import load; from loudvox.catalog import list_catalog; print(len(list_catalog(load().resolved_voices_dir())))"
+        if ([int]$installed -eq 0) {
+            Write-Host $M.none_chosen -ForegroundColor Yellow
+            $langs = @("en")
+        }
     }
     foreach ($l in $langs) {
         Write-Host "$($M.downloading) $l"
         loudvox download $l
     }
-    # Idioma inicial de la app: el del instalador si se instalaron sus voces,
-    # si no, el primero elegido
-    $appLang = if ($langs -contains $LANG) { $LANG } else { $langs[0] }
-    python -c "from loudvox.config import load, save; cfg = load(); cfg.language = '$appLang'; save(cfg)"
+    # Idioma inicial de la app: SOLO si se eligieron idiomas en este paso
+    # (una reinstalacion sin elecciones no debe pisar la config del usuario)
+    if ($langs.Count -gt 0) {
+        $appLang = if ($langs -contains $LANG) { $LANG } else { $langs[0] }
+        python -c "from loudvox.config import load, save; cfg = load(); cfg.language = '$appLang'; save(cfg)"
+    }
 
     # --- 4. Dictado ---------------------------------------------------------------
     Titulo $M.stt_hdr

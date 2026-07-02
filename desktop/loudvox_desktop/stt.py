@@ -68,15 +68,35 @@ class Transcriber:
         self._model = None
         self._lock = threading.Lock()
 
-    @staticmethod
-    def _add_nvidia_dll_dirs() -> None:
-        """Si están los paquetes pip de NVIDIA (nvidia-cublas-cu12 /
-        nvidia-cudnn-cu12), registra sus carpetas de DLLs (solo Windows)."""
+    def _add_nvidia_dll_dirs(self) -> None:
+        """Registra carpetas con DLLs de CUDA (solo Windows), en este orden:
+
+        1. La carpeta del propio modelo (y su padre): las builds de
+           Purfview/Subtitle Edit traen cublas/cudnn AL LADO del modelo,
+           así que se reutilizan sin descargar nada.
+        2. Los paquetes pip de NVIDIA si están instalados
+           (nvidia-cublas-cu12 / nvidia-cudnn-cu12).
+        """
         import os
         import sys
 
         if sys.platform != "win32":
             return
+
+        def add(d):
+            if os.path.isdir(d):
+                try:
+                    os.add_dll_directory(d)
+                except OSError:
+                    pass
+
+        # 1. Junto al modelo (ruta local tipo Purfview)
+        if os.path.isdir(self.model_size):
+            model_dir = os.path.abspath(self.model_size)
+            add(model_dir)
+            add(os.path.dirname(model_dir))
+
+        # 2. Paquetes pip de NVIDIA
         try:
             import nvidia  # noqa: F401
         except ImportError:
@@ -84,12 +104,7 @@ class Transcriber:
         base = os.path.dirname(nvidia.__file__)
         for sub in os.listdir(base):
             for leaf in ("bin", "lib"):
-                d = os.path.join(base, sub, leaf)
-                if os.path.isdir(d):
-                    try:
-                        os.add_dll_directory(d)
-                    except OSError:
-                        pass
+                add(os.path.join(base, sub, leaf))
 
     def _load(self):
         if self._model is None:
