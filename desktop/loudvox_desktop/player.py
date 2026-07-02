@@ -8,14 +8,27 @@ Backends de audio:
 
 from __future__ import annotations
 
+import io
 import queue
 import subprocess
 import sys
 import threading
+import wave
+
+
+def wav_duration(wav: bytes) -> float:
+    """Duración en segundos de un WAV en memoria."""
+    with wave.open(io.BytesIO(wav)) as w:
+        return w.getnframes() / w.getframerate()
 
 
 class AudioSink:
-    """Reproduce un WAV (bytes) de forma bloqueante, con stop()."""
+    """Reproduce un WAV (bytes) de forma bloqueante pero interrumpible.
+
+    En Windows, winsound sincrónico no puede cortarse desde otro hilo, así
+    que se reproduce en modo asíncrono y se espera la duración del WAV con
+    un Event: stop() lo dispara y el corte es inmediato.
+    """
 
     def __init__(self):
         self._proc: subprocess.Popen | None = None
@@ -26,9 +39,13 @@ class AudioSink:
         if sys.platform == "win32":
             import winsound
 
-            # SND_MEMORY es asíncrono con SND_ASYNC; sin él, bloquea. Usamos
-            # bloqueante en el hilo del reproductor; stop() purga desde afuera.
-            winsound.PlaySound(wav, winsound.SND_MEMORY)
+            winsound.PlaySound(
+                wav, winsound.SND_MEMORY | winsound.SND_ASYNC | winsound.SND_NODEFAULT
+            )
+            interrupted = self._stopped.wait(wav_duration(wav) + 0.05)
+            if interrupted:
+                # Un sonido nuevo siempre cancela al anterior: garantiza el corte.
+                winsound.PlaySound(None, winsound.SND_PURGE)
         else:
             self._proc = subprocess.Popen(
                 ["aplay", "-q", "-"],

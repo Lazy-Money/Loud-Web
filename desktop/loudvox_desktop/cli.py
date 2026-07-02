@@ -22,6 +22,12 @@ def main(argv: list[str] | None = None) -> int:
     p_file = sub.add_parser("file", help="leer un archivo pdf/txt/md")
     p_file.add_argument("path")
     p_file.add_argument("--desde", default="", help="empezar desde esta frase")
+    p_file.add_argument(
+        "--desde-clip",
+        action="store_true",
+        help="empezar desde la frase que esté copiada en el portapapeles "
+        "(copiá una frase del documento y ejecutá este comando)",
+    )
 
     args = parser.parse_args(argv)
 
@@ -34,8 +40,18 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.command == "file":
+        start = args.desde
+        if getattr(args, "desde_clip", False) and not start:
+            from .clipboard import get_clipboard
+
+            # Las primeras ~12 palabras alcanzan para ubicar el punto de inicio
+            start = " ".join(get_clipboard().split()[:12])
+            if not start:
+                print("Error: el portapapeles está vacío.", file=sys.stderr)
+                return 1
+            print(f"[loudvox] empezando desde: “{start}…”")
         try:
-            app.read_file(args.path, args.desde)
+            app.read_file(args.path, start)
         except (FileNotFoundError, ValueError) as exc:
             print(f"Error: {exc}", file=sys.stderr)
             return 1

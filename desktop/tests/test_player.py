@@ -70,3 +70,16 @@ def test_on_chunk_callback():
     player.play_text_chunks(["x", "y"], on_chunk=lambda i, c: seen.append((i, c)))
     player.wait(timeout=5)
     assert seen == [(0, "x"), (1, "y")]
+
+
+def test_wav_duration():
+    import io, wave
+    from loudvox_desktop.player import wav_duration
+
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(22050)
+        w.writeframes(b"\x00\x00" * 22050)  # 1 segundo
+    assert abs(wav_duration(buf.getvalue()) - 1.0) < 0.01

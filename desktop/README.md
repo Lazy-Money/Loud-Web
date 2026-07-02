@@ -51,10 +51,16 @@ muestra la ruta) — sección `hotkeys`, mínimo 2 teclas, sin restricciones:
 loudvox-desktop file documento.pdf
 loudvox-desktop file notas.md
 loudvox-desktop file libro.txt --desde "capítulo tres"
+loudvox-desktop file libro.pdf --desde-clip
 ```
 
 `--desde` busca la frase (sin distinguir mayúsculas) y lee desde ahí, para
 retomar donde dejaste.
+
+**"Leer desde aquí" en un PDF**: copiá (Ctrl+C) una frase del punto donde
+querés empezar en tu visor de PDF y ejecutá `--desde-clip` — usa el
+portapapeles como punto de partida y lee de ahí al final. (La hotkey de
+selección `Ctrl+Alt+R` también funciona dentro del visor para fragmentos.)
 
 ## Cómo funciona "leer selección"
 
