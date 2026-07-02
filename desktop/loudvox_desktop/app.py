@@ -44,23 +44,31 @@ class DesktopApp:
         else:
             print(f"[loudvox] dictado: {event}")
 
+    def _build_dictation(self):
+        from .stt import DictationController, Recorder, Transcriber
+        from .writer import write_text
+
+        transcriber = Transcriber(
+            model_size=self.cfg.stt_model,
+            language=self.cfg.language,
+            device=self.cfg.stt_device,
+            compute=self.cfg.stt_compute,
+        )
+        self._dictation = DictationController(
+            recorder=Recorder(),
+            transcribe=transcriber.transcribe,
+            write=write_text,
+            feedback=self._beep,
+        )
+        self._transcriber = transcriber
+        return transcriber
+
     def toggle_dictation(self) -> None:
         if self._dictation is None:
-            from .stt import DictationController, Recorder, Transcriber
-            from .writer import write_text
-
-            transcriber = Transcriber(
-                model_size=self.cfg.stt_model, language=self.cfg.language
-            )
-            self._dictation = DictationController(
-                recorder=Recorder(),
-                transcribe=transcriber.transcribe,
-                write=write_text,
-                feedback=self._beep,
-            )
+            self._build_dictation()
             print(
-                f"[loudvox] dictado listo (modelo {self.cfg.stt_model}; la primera "
-                "transcripción descarga el modelo y puede tardar)"
+                f"[loudvox] dictado listo (modelo {self.cfg.stt_model} en "
+                f"{self.cfg.stt_device}; si es la primera vez, se descarga y tarda)"
             )
         self._dictation.toggle()
         state = "grabando… (misma tecla para terminar)" if self._dictation.recording else "procesando…"
@@ -130,6 +138,13 @@ class DesktopApp:
             print("[loudvox] voz cargada y lista")
         except FileNotFoundError as exc:
             print(f"[loudvox] AVISO: {exc}")
+        if self.cfg.stt_preload:
+            try:
+                transcriber = self._build_dictation()
+                transcriber.preload()
+                print("[loudvox] modelo de dictado precargado")
+            except Exception as exc:
+                print(f"[loudvox] AVISO dictado: {exc}")
 
     def run(self, with_server: bool = True, port: int = 5089, tray: bool = True) -> None:
         from .hotkeys import listen
@@ -163,29 +178,34 @@ class DesktopApp:
         print(f"  {hk.dictate:>18}  dictar (empezar / terminar)")
         print(f"  {hk.stop:>18}  detener")
 
+        stop_event = threading.Event()
+        icon = None
         if tray:
             try:
                 from .tray import run_tray
 
+                icon = run_tray(self, stop_event)
                 print("Ícono en la bandeja del sistema (junto al reloj): "
-                      "clic derecho → Salir para cerrar.")
-                run_tray(self)  # bloquea hasta "Salir"
-                self.player.stop()
-                listener.stop()
-                print("Hasta luego.")
-                return
+                      "clic derecho → Salir. (Ctrl+C acá también funciona.)")
             except Exception as exc:
                 print(f"[loudvox] bandeja no disponible ({exc}); modo consola.")
+                print("Ctrl+C en esta terminal para salir.")
+        else:
+            print("Ctrl+C en esta terminal para salir.")
 
-        print("Ctrl+C en esta terminal para salir.")
-        # En Windows, un join() sin timeout no puede interrumpirse con Ctrl+C:
-        # se espera en intervalos cortos para que la señal llegue.
+        # Espera interrumpible en el hilo principal: la señal de Ctrl+C se
+        # procesa entre esperas (un join()/run() bloqueante se la tragaría).
         try:
-            while listener.is_alive():
-                listener.join(0.5)
+            while not stop_event.wait(0.5):
+                pass
         except KeyboardInterrupt:
             pass
         finally:
+            if icon is not None:
+                try:
+                    icon.stop()
+                except Exception:
+                    pass
             self.player.stop()
             listener.stop()
             print("\nHasta luego.")

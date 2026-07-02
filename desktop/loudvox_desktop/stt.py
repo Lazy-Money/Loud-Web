@@ -47,23 +47,42 @@ class Recorder:
 
 
 class Transcriber:
-    """faster-whisper local, carga diferida (la primera vez tarda)."""
+    """faster-whisper local, carga diferida (la primera vez tarda).
 
-    def __init__(self, model_size: str = "small", language: str = "es"):
+    ``model_size`` acepta un nombre ("small", "large-v2"…) o una ruta a un
+    modelo faster-whisper ya descargado en tu disco.
+    """
+
+    def __init__(
+        self,
+        model_size: str = "small",
+        language: str = "es",
+        device: str = "cpu",
+        compute: str = "",
+    ):
         self.model_size = model_size
         self.language = language
+        self.device = device
+        # automático: lo más liviano por dispositivo
+        self.compute = compute or ("int8_float16" if device == "cuda" else "int8")
         self._model = None
         self._lock = threading.Lock()
 
     def _load(self):
         if self._model is None:
+            import os
+
+            os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
             from faster_whisper import WhisperModel
 
-            # int8: el modo más liviano en CPU, precisión casi idéntica
             self._model = WhisperModel(
-                self.model_size, device="cpu", compute_type="int8"
+                self.model_size, device=self.device, compute_type=self.compute
             )
         return self._model
+
+    def preload(self) -> None:
+        with self._lock:
+            self._load()
 
     def transcribe(self, audio) -> str:
         if len(audio) < 1600:  # menos de 0.1 s: nada que transcribir

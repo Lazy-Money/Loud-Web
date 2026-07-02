@@ -21,12 +21,21 @@ def _icon_image():
     return img
 
 
-def run_tray(app) -> None:
-    """Bloquea en el bucle del ícono. 'Salir' detiene todo y retorna."""
+def run_tray(app, stop_event: threading.Event):
+    """Arranca el ícono en su propio hilo y devuelve el icon.
+
+    'Salir' dispara ``stop_event``. El hilo principal queda libre para
+    esperar de forma interrumpible (así Ctrl+C también funciona).
+    """
     import pystray
 
     def bg(fn):
         return lambda: threading.Thread(target=fn, daemon=True).start()
+
+    def do_exit(icon, item):
+        icon.visible = False
+        icon.stop()
+        stop_event.set()
 
     hk = app.cfg.hotkeys
     menu = pystray.Menu(
@@ -38,7 +47,8 @@ def run_tray(app) -> None:
         pystray.MenuItem(f"Dictar: {hk.dictate}", None, enabled=False),
         pystray.MenuItem(f"Detener: {hk.stop}", None, enabled=False),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Salir", lambda icon, item: icon.stop()),
+        pystray.MenuItem("Salir", do_exit),
     )
     icon = pystray.Icon("loudvox", _icon_image(), "LoudVox — lector local", menu)
-    icon.run()  # bloquea hasta "Salir"
+    icon.run_detached()  # bucle del ícono en su propio hilo
+    return icon

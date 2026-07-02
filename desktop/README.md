@@ -42,10 +42,32 @@ forma correcta de cerrarla).
 2. `Ctrl+Alt+D` → *bip agudo* → hablá
 3. `Ctrl+Alt+D` de nuevo → *bip* → en unos segundos aparece el texto escrito
 
-La transcripción usa Whisper (faster-whisper) **en tu CPU, sin internet**.
-La primera vez descarga el modelo (~500 MB para `small`); después, todo
-offline. En PCs muy modestas podés bajar a un modelo más liviano en
-`config.json`: `"stt_model": "base"` (~150 MB, algo menos preciso).
+La transcripción usa Whisper (faster-whisper) **local, sin internet**.
+La primera vez descarga el modelo (~500 MB para `small`) a
+`%USERPROFILE%\.cache\huggingface`; después, todo offline.
+
+Opciones en `config.json` según tu máquina:
+
+```json
+"stt_model": "small",      // o "base" (liviano), "large-v3" (máximo),
+                           // o una RUTA a un modelo faster-whisper que ya
+                           // tengas (p. ej. el de Subtitle Edit/Purfview):
+                           // "C:\\Ruta\\a\\faster-whisper-large-v2"
+"stt_device": "cpu",       // "cuda" si tenés GPU NVIDIA (mucho más rápido)
+"stt_compute": "",         // vacío = automático (int8 / int8_float16)
+"stt_preload": false       // true = cargar el modelo al iniciar la app:
+                           // usa RAM siempre, pero el primer dictado es
+                           // instantáneo
+```
+
+Notas:
+- El "tardar" tiene dos partes: la **descarga** (solo la primera vez en la
+  vida) y la **carga en RAM** (cada vez que arranca la app, unos segundos,
+  solo al primer dictado de la sesión). `stt_preload: true` mueve esa carga
+  al arranque.
+- Para `"cuda"` con faster-whisper hacen falta las librerías CUDA/cuDNN de
+  NVIDIA (si ya corrés faster-whisper con GPU en otra herramienta, ya las
+  tenés).
 
 Probar la transcripción con un audio: `loudvox-desktop stt grabacion.wav`
 

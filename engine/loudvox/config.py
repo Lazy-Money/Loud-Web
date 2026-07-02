@@ -66,9 +66,17 @@ class Config:
     use_gpu: bool = False  # onnxruntime CUDA si está disponible
     engine: str = "piper"  # "piper" | "kokoro" (Fase 5)
     voices_dir: str = ""  # vacío = data_dir()/voices
-    # Dictado (voz -> texto). Modelos Whisper: tiny/base/small/medium.
-    # "small" = buena precisión en español; "base" = más liviano y rápido.
+    # Dictado (voz -> texto). Acepta un nombre Whisper (tiny/base/small/
+    # medium/large-v2/large-v3) o una RUTA a un modelo faster-whisper ya
+    # descargado (p. ej. el que usa Subtitle Edit / Purfview).
     stt_model: str = "small"
+    # "cpu" o "cuda" (GPU NVIDIA). Con cuda, los modelos grandes vuelan.
+    stt_device: str = "cpu"
+    # Tipo de cómputo; vacío = automático (int8 en cpu, int8_float16 en cuda)
+    stt_compute: str = ""
+    # Cargar el modelo de dictado al iniciar la app (usa RAM desde el
+    # arranque, pero el primer dictado responde al instante)
+    stt_preload: bool = False
     hotkeys: Hotkeys = field(default_factory=Hotkeys)
     # Ajustes por voz que pisan a los globales cuando esa voz está en uso:
     #   "voice_overrides": {
