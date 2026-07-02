@@ -90,12 +90,17 @@ class _Handler(BaseHTTPRequestHandler):
             params = self.cfg.params_for(voice)
             speed = float(data.get("speed") or params["speed"])
             volume = float(data.get("volume") or params["volume"])
+            pitch = float(data.get("pitch", params["pitch"]))
             if data.get("normalize", True):
                 text = _normalizer(lang).normalize(text)
             try:
                 wav = self.backend.synthesize(
                     text, voice, speed=speed, volume=volume, speaker=params["speaker"]
                 )
+                if pitch:
+                    from .audio import apply_pitch
+
+                    wav = apply_pitch(wav, pitch)
             except (FileNotFoundError, ValueError) as exc:
                 self._json(400, {"error": str(exc)})
                 return

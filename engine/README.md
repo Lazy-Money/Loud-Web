@@ -67,6 +67,22 @@ loudvox speak "..." --gpu -o out.wav
 O de forma permanente en la config (`loudvox config` muestra la ruta del
 archivo): `"use_gpu": true`. Es reversible en cualquier momento.
 
+## Motor Kokoro (voz premium, opcional)
+
+Kokoro-82M suena notablemente más natural que Piper y sigue siendo
+CPU-friendly (aunque más lento: úsalo si tu PC va sobrada con Piper).
+Sin alemán en v1.0 (para `de`, seguí con Piper).
+
+```bash
+pip install .[kokoro]        # instala el runtime
+loudvox download kokoro      # baja el modelo (~340 MB, una vez)
+```
+
+En `config.json`: `"engine": "kokoro"` y una voz Kokoro, p. ej.
+`"voice": "ef_dora"` (es), `em_alex` (es), `af_heart` (en), `if_sara` (it).
+`loudvox voices` lista las instaladas. Para volver a Piper:
+`"engine": "piper"`.
+
 ## Diccionarios de abreviaturas
 
 En `dictionaries/` hay un CSV por idioma (`es`, `en`, `it`, `de`) con el formato:
@@ -93,7 +109,9 @@ formato. Tus entradas tienen prioridad sobre las incluidas.
 - `voice`: nombre de voz Piper (vacío = recomendada del idioma)
 - `speed`: velocidad de lectura (1.0 normal, 0.5–3.0)
 - `volume`: volumen (1.0 normal, 0.1–2.0)
-- `pitch`: tono en semitonos (Fase 5)
+- `pitch`: tono en semitonos — negativo = más grave, positivo = más agudo
+  (rango útil ±6; también por voz en `voice_overrides`). Se aplica sin
+  cambiar la velocidad.
 - `use_gpu`: `true`/`false`
 - `hotkeys`: combinaciones personalizables, mínimo 2 teclas
   (`"ctrl+alt+r"`); sin restricciones sobre cuáles.

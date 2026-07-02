@@ -45,8 +45,9 @@ Readvox/     Material de referencia (snapshot de readvox.com).
 | 2 | Extensión Brave: leer selección, leer desde aquí, resaltado | ✅ |
 | 3 | Cliente escritorio: hotkeys globales, portapapeles, PDF/txt/md | ✅ |
 | 4 | Dictado: Whisper local, escritura en el input activo | ✅ |
-| 5 | Tono de voz (grave/agudo), motor Kokoro opcional | ⏳ |
-| 5b | Clonación de voz: entrenamiento en Colab gratuito → voz local `.onnx` | ⏳ |
+| 5 | Tono de voz (grave/agudo), motor Kokoro opcional | ✅ |
+| 5b | Clonación de voz: entrenamiento en Colab gratuito → voz local `.onnx` | 🧪 beta |
+| 6 | Instalador: modelos incluidos, checkbox dictado (peso declarado), CPU/GPU, inicio con Windows | ⏳ |
 
 ## Empezar
 

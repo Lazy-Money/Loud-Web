@@ -91,6 +91,7 @@ class Config:
         return {
             "speed": float(ov.get("speed", self.speed)),
             "volume": float(ov.get("volume", self.volume)),
+            "pitch": float(ov.get("pitch", self.pitch)),
             "speaker": ov.get("speaker"),
         }
 

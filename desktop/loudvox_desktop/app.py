@@ -114,13 +114,18 @@ class DesktopApp:
         text = self._normalizer.normalize(text)
         voice = self.cfg.resolved_voice()
         params = self.cfg.params_for(voice)
-        return self.backend.synthesize(
+        wav = self.backend.synthesize(
             text,
             voice,
             speed=params["speed"],
             volume=params["volume"],
             speaker=params["speaker"],
         )
+        if params["pitch"]:
+            from loudvox.audio import apply_pitch
+
+            wav = apply_pitch(wav, params["pitch"])
+        return wav
 
     # --- acciones de hotkeys ---------------------------------------------
 

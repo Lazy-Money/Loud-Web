@@ -19,6 +19,8 @@ dependencies = [
 dev = ["pytest==8.4.2"]
 # GPU NVIDIA: pip install loudvox[gpu] reemplaza onnxruntime por la variante CUDA.
 gpu = ["onnxruntime-gpu==1.27.0"]
+# Motor de voz premium (82M params, sigue siendo CPU-friendly)
+kokoro = ["kokoro-onnx==0.5.0"]
 
 [project.scripts]
 loudvox = "loudvox.cli:main"

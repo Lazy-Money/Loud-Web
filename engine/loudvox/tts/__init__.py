@@ -8,7 +8,7 @@ def get_backend(engine: str, voices_dir, use_gpu: bool = False) -> TTSBackend:
     if engine == "piper":
         return PiperBackend(voices_dir, use_gpu=use_gpu)
     if engine == "kokoro":
-        raise NotImplementedError(
-            "El motor Kokoro llega en la Fase 5. Usá engine='piper'."
-        )
+        from .kokoro_backend import KokoroBackend
+
+        return KokoroBackend(voices_dir, use_gpu=use_gpu)
     raise ValueError(f"Motor desconocido: {engine!r}")

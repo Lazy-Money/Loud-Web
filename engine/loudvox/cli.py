@@ -93,10 +93,12 @@ def _main(argv: list[str] | None = None) -> int:
             )
 
     elif args.command == "download":
-        from .downloader import download_language, download_voice
+        from .downloader import download_kokoro, download_language, download_voice
 
         dest = cfg.resolved_voices_dir()
-        if args.target in SUPPORTED_LANGUAGES:
+        if args.target == "kokoro":
+            download_kokoro(dest)
+        elif args.target in SUPPORTED_LANGUAGES:
             download_language(args.target, dest)
         else:
             download_voice(args.target, dest)
