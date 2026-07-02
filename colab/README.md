@@ -1,85 +1,47 @@
-# Clonar tu voz para LoudVox (gratis, con Google Colab)
+# Voces personalizadas para LoudVox
 
-Entrenás una voz Piper con grabaciones tuyas usando la GPU gratuita de
-Colab. El resultado es un archivo `.onnx` (~60 MB) que corre **local y
-rápido en tu PC para siempre** — el proceso pesado ocurre una sola vez,
-afuera.
+Dos caminos para tener voces propias, ambos con GPU gratuita de Google Colab.
+El resultado siempre es un par de archivos `.onnx` + `.onnx.json` (~60 MB) que
+copiás a tu carpeta de voces de LoudVox y elegís en Configuración → Voz.
 
-> Estado: **beta**. El proceso funciona pero requiere paciencia (2-4 horas
-> de Colab) y puede necesitar ajustes según los cambios de Colab.
+## Camino 1 — Destilar una voz Kokoro (sin grabar nada)
 
-## Paso 1 — Grabar tu voz (lo más importante)
+Notebook: **[destilar_alex.ipynb](destilar_alex.ipynb)** — genera una voz Piper
+con el timbre de la voz Kokoro **Alex** (masculina, español). Kokoro lee el
+guion, se arma el dataset solo, se entrena. Cero grabación, cero transcripción.
 
-**Cantidad**: mínimo 15 minutos de audio limpio; ideal 30-60 min.
-Más audio = voz más fiel.
+Abrir en Colab (Entorno de ejecución → GPU T4 antes de correr):
+https://colab.research.google.com/github/Lazy-Money/Loud-Web/blob/claude/readvox-research-slumjx/colab/destilar_alex.ipynb
 
-**Cómo grabar**:
-- Habitación silenciosa, siempre el mismo micrófono y la misma distancia.
-- Hablá natural, como si leyeras para otra persona (así va a sonar la voz).
-- Frases de 3 a 15 segundos. Evitá ruidos, música, y de fondo la tele.
-- Formato: WAV mono. Audacity (gratis) sirve perfecto.
+## Camino 2 — Clonar TU voz
 
-**Qué leer**: cualquier texto variado (noticias, un libro). Cuanta más
-variedad de palabras y entonaciones, mejor.
+Notebook: **[clonar_mi_voz.ipynb](clonar_mi_voz.ipynb)** — entrena con tus
+grabaciones. Usás el mismo guion (`corpus/corpus_es_1300.txt`).
 
-## Paso 2 — Armar el dataset
+**Cómo grabar:** un clip corto por frase, nombrado por el número de la frase:
+- `f00001.wav` = tu voz leyendo la línea 1 del corpus
+- `f00002.wav` = línea 2, etc.
 
-Una carpeta con esta estructura, comprimida en `dataset.zip`:
+Grabás las que quieras y comprimís la carpeta en `dataset.zip`. El notebook
+usa solo las que subas y arma el `metadata.csv` solo (ya sabemos el texto).
 
-```
-dataset/
-├── wavs/
-│   ├── frase001.wav
-│   ├── frase002.wav
-│   └── …
-└── metadata.csv
-```
+| Grabás | Tu voz | Resultado |
+|---|---|---|
+| ~300 frases | ~30-45 min | voz reconocible (prueba) |
+| ~500 frases | ~1 h | buena |
+| 1.300 frases | ~1,5-2 h | máxima fidelidad |
 
-`metadata.csv`: una línea por audio, con el texto EXACTO que se dice
-(formato LJSpeech, separador `|`):
+**Audio:** WAV mono, mismo micrófono/distancia, lugar silencioso, voz natural,
+cada clip 1-15 s. El **grabador guiado de LoudVox** (a pedido) produce estos
+archivos con el nombre correcto automáticamente: te muestra cada frase, grabás,
+pasa a la siguiente.
 
-```
-frase001|Hola, esta es la primera frase que grabé.
-frase002|El clima de hoy está soleado y agradable.
-```
+## El corpus (guion)
 
-## Paso 3 — Entrenar en Colab
+`corpus/corpus_es_1300.txt` — 1.300 frases seleccionadas de Mozilla Common
+Voice (dominio público) por cobertura de difonemas del español, sin nombres
+extranjeros. Método reproducible en `corpus/generar_corpus.py`.
 
-1. Abrí `entrenar_voz_piper.ipynb` en [Google Colab](https://colab.research.google.com/)
-   (Archivo → Subir notebook).
-2. Entorno de ejecución → Cambiar tipo → **GPU (T4)**.
-3. Ejecutá las celdas en orden. Te va a pedir subir `dataset.zip`.
-4. El entrenamiento parte del checkpoint español oficial (fine-tuning):
-   2-4 horas para un buen resultado.
-5. La última celda descarga `mi_voz.onnx` + `mi_voz.onnx.json`.
+## Entrenar sin internet (opcional)
 
-## Paso 4 — Instalar tu voz en LoudVox
-
-Copiá los dos archivos a la carpeta de voces (la muestra `loudvox config`
-→ `voices_dir`; por defecto `%LOCALAPPDATA%\loudvox\voices` en Windows) y
-en `config.json`:
-
-```json
-"voice": "mi_voz"
-```
-
-Reiniciá `loudvox-desktop`. Tu voz, 100% local.
-
-## Destilar una voz Kokoro a Piper (sin grabar nada)
-
-Ver [destilar_kokoro_a_piper.ipynb](destilar_kokoro_a_piper.ipynb): notebook
-de Colab 100% automático — genera el dataset con una voz Kokoro (Dora/Alex/
-Santa) y entrena una voz Piper con ese timbre. Cero grabación, cero
-transcripción. `generar_dataset.py` hace lo mismo en tu PC si tenés Kokoro
-instalado localmente.
-
-## Entrenar SIN internet (local, con tu GPU)
-
-Ver [ENTRENAR_LOCAL.md](ENTRENAR_LOCAL.md): mismo proceso corriendo en tu
-propia máquina vía WSL2 — cero nube.
-
-## Alternativa sin entrenamiento (PC potente)
-
-Chatterbox (Resemble AI, MIT) clona con 10 segundos de muestra, pero el
-modelo completo (~500M params) debe correr en tu máquina en cada lectura:
-solo tiene sentido con GPU buena. Si te interesa, es un módulo futuro.
+`ENTRENAR_LOCAL.md`: el mismo pipeline en tu propia GPU vía WSL2, sin nube.
