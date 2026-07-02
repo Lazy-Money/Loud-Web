@@ -90,3 +90,44 @@ def test_toggles_concurrentes_no_rompen():
     for t in threads: t.join()
     # 10 toggles -> termina no-grabando, sin excepciones
     assert not ctl.recording
+
+
+def test_app_no_graba_hasta_que_el_modelo_este_listo(monkeypatch):
+    """El primer Ctrl+Alt+D dispara la carga; recién tras el aviso de LISTO
+    se acepta grabar (evita dictados perdidos durante la descarga)."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "engine"))
+    from loudvox_desktop.app import DesktopApp
+
+    app = DesktopApp.__new__(DesktopApp)  # sin cargar motor TTS
+    from loudvox.config import Config
+
+    app.cfg = Config()
+    app._stt_state = "off"
+    app._icon = None
+    app._dictation = None
+
+    class FakeTranscriber:
+        def preload(self):
+            pass
+
+    events = []
+
+    def fake_build():
+        app._dictation = type(
+            "D", (), {"toggle": lambda s: events.append("toggle"),
+                      "recording": False}
+        )()
+        return FakeTranscriber()
+
+    monkeypatch.setattr(app, "_build_dictation", fake_build)
+    monkeypatch.setattr(app, "_beep", lambda e: events.append(f"beep:{e}"))
+
+    app.toggle_dictation()  # dispara la carga en segundo plano
+    assert wait_for(lambda: app._stt_state == "ready")
+    assert "toggle" not in events  # no grabó durante la carga
+
+    app.toggle_dictation()  # ahora sí
+    assert "toggle" in events

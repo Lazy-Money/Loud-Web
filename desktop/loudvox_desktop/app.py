@@ -31,6 +31,17 @@ class DesktopApp:
         self._normalizer = Normalizer.for_language(self.cfg.language)
         self.player = Player(self._synthesize)
         self._dictation = None  # se arma en el primer uso (carga diferida)
+        self._stt_state = "off"  # off -> loading -> ready
+        self._icon = None  # ícono de bandeja (si hay): para notificaciones
+
+    def _notify(self, message: str) -> None:
+        """Globo de notificación desde el ícono de bandeja + consola."""
+        print(f"[loudvox] {message}")
+        if self._icon is not None:
+            try:
+                self._icon.notify(message, "LoudVox")
+            except Exception:
+                pass
 
     def _beep(self, event: str) -> None:
         """Señal sonora del dictado: aguda al empezar, grave al terminar."""
@@ -63,13 +74,38 @@ class DesktopApp:
         self._transcriber = transcriber
         return transcriber
 
+    def _load_stt(self) -> None:
+        """Prepara el dictado en segundo plano y avisa cuando está listo."""
+        self._stt_state = "loading"
+        self._notify(
+            "Preparando el dictado… (si es la primera vez se descarga el "
+            "modelo y puede tardar varios minutos). Te aviso cuando esté listo."
+        )
+        try:
+            transcriber = self._build_dictation()
+            transcriber.preload()
+        except Exception as exc:
+            self._stt_state = "off"
+            self._beep("error")
+            self._notify(f"El dictado no pudo prepararse: {exc}")
+            return
+        self._stt_state = "ready"
+        for _ in range(3):  # triple bip: inconfundible
+            self._beep("done")
+        self._notify(
+            f"🎤 Dictado LISTO. Hacé clic donde quieras escribir, presioná "
+            f"{self.cfg.hotkeys.dictate} y hablá (misma tecla para terminar)."
+        )
+
     def toggle_dictation(self) -> None:
-        if self._dictation is None:
-            self._build_dictation()
-            print(
-                f"[loudvox] dictado listo (modelo {self.cfg.stt_model} en "
-                f"{self.cfg.stt_device}; si es la primera vez, se descarga y tarda)"
-            )
+        # La grabación no se acepta hasta que el modelo esté cargado: evita
+        # dictados que se "pierden" y aparecen minutos después en cualquier lado.
+        if self._stt_state == "loading":
+            self._notify("El dictado todavía se está preparando… te aviso.")
+            return
+        if self._stt_state == "off":
+            threading.Thread(target=self._load_stt, daemon=True).start()
+            return
         self._dictation.toggle()
         state = "grabando… (misma tecla para terminar)" if self._dictation.recording else "procesando…"
         print(f"[loudvox] dictado: {state}")
@@ -138,13 +174,8 @@ class DesktopApp:
             print("[loudvox] voz cargada y lista")
         except FileNotFoundError as exc:
             print(f"[loudvox] AVISO: {exc}")
-        if self.cfg.stt_preload:
-            try:
-                transcriber = self._build_dictation()
-                transcriber.preload()
-                print("[loudvox] modelo de dictado precargado")
-            except Exception as exc:
-                print(f"[loudvox] AVISO dictado: {exc}")
+        if self.cfg.stt_preload and self._stt_state == "off":
+            self._load_stt()
 
     def run(self, with_server: bool = True, port: int = 5089, tray: bool = True) -> None:
         from .hotkeys import listen
@@ -185,6 +216,7 @@ class DesktopApp:
                 from .tray import run_tray
 
                 icon = run_tray(self, stop_event)
+                self._icon = icon
                 print("Ícono en la bandeja del sistema (junto al reloj): "
                       "clic derecho → Salir. (Ctrl+C acá también funciona.)")
             except Exception as exc:
