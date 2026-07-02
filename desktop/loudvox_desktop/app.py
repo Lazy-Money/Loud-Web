@@ -43,6 +43,18 @@ class DesktopApp:
             except Exception:
                 pass
 
+    def reload_runtime(self) -> None:
+        """Aplica en caliente los campos de ``self.cfg`` que lo permiten.
+
+        El objeto Config es compartido con el servidor local, así que las
+        lecturas de la extensión también toman los valores nuevos. Los
+        atajos y el motor de dictado requieren reiniciar la app.
+        """
+        self._normalizer = Normalizer.for_language(self.cfg.language)
+        self.backend = get_backend(
+            self.cfg.engine, self.cfg.resolved_voices_dir(), use_gpu=self.cfg.use_gpu
+        )
+
     def _beep(self, event: str) -> None:
         """Señal sonora del dictado: aguda al empezar, grave al terminar."""
         import sys

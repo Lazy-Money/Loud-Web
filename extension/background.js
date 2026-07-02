@@ -24,7 +24,7 @@ async function ensureOffscreen() {
 }
 
 async function getSettings() {
-  const defaults = { language: "es", voice: "", speed: 1.0 };
+  const defaults = { language: "es", voice: "", speed: 1.0, volume: 1.0, pitch: 0 };
   const stored = await chrome.storage.local.get(defaults);
   return { ...defaults, ...stored };
 }

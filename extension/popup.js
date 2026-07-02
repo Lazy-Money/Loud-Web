@@ -3,12 +3,26 @@
 const ENGINE = "http://127.0.0.1:5089";
 const $ = (id) => document.getElementById(id);
 
+function pitchLabel(v) {
+  const n = Number(v);
+  if (n === 0) return "normal";
+  return n < 0 ? `${n} (grave)` : `+${n} (agudo)`;
+}
+
+function refreshLabels() {
+  $("speed-val").textContent = `${Number($("speed").value).toFixed(1)}×`;
+  $("volume-val").textContent = `${Math.round($("volume").value * 100)}%`;
+  $("pitch-val").textContent = pitchLabel($("pitch").value);
+}
+
 async function loadSettings() {
-  const defaults = { language: "es", voice: "", speed: 1.0 };
+  const defaults = { language: "es", voice: "", speed: 1.0, volume: 1.0, pitch: 0 };
   const s = await chrome.storage.local.get(defaults);
   $("language").value = s.language;
   $("speed").value = s.speed;
-  $("speed-val").textContent = `${Number(s.speed).toFixed(1)}×`;
+  $("volume").value = s.volume;
+  $("pitch").value = s.pitch;
+  refreshLabels();
   return s;
 }
 
@@ -17,6 +31,8 @@ function saveSettings() {
     language: $("language").value,
     voice: $("voice").value,
     speed: Number($("speed").value),
+    volume: Number($("volume").value),
+    pitch: Number($("pitch").value),
   });
 }
 
@@ -53,10 +69,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   $("language").addEventListener("change", saveSettings);
   $("voice").addEventListener("change", saveSettings);
-  $("speed").addEventListener("input", () => {
-    $("speed-val").textContent = `${Number($("speed").value).toFixed(1)}×`;
-    saveSettings();
-  });
+  for (const id of ["speed", "volume", "pitch"]) {
+    $(id).addEventListener("input", () => {
+      refreshLabels();
+      saveSettings();
+    });
+  }
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   $("read-selection").addEventListener("click", () => {

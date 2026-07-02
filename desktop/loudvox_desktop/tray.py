@@ -37,11 +37,17 @@ def run_tray(app, stop_event: threading.Event):
         icon.stop()
         stop_event.set()
 
+    def open_settings():
+        from .settings_ui import open_settings as open_ui
+
+        open_ui(app)
+
     hk = app.cfg.hotkeys
     menu = pystray.Menu(
         pystray.MenuItem("📋 Leer portapapeles", bg(app.read_clipboard)),
         pystray.MenuItem("🎤 Dictar (empezar / terminar)", bg(app.toggle_dictation)),
         pystray.MenuItem("⏹ Detener lectura", lambda: app.stop()),
+        pystray.MenuItem("⚙️ Configuración…", lambda: open_settings()),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(f"Leer selección: {hk.read_selection}", None, enabled=False),
         pystray.MenuItem(f"Dictar: {hk.dictate}", None, enabled=False),

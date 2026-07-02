@@ -10,6 +10,9 @@ async function synthesize(text, settings) {
   const body = { text, speed: Number(settings.speed) || 1.0 };
   if (settings.voice) body.voice = settings.voice;
   if (settings.language) body.language = settings.language;
+  if (settings.volume != null) body.volume = Number(settings.volume) || 1.0;
+  if (settings.pitch != null && Number(settings.pitch) !== 0)
+    body.pitch = Number(settings.pitch);
   const resp = await fetch(`${ENGINE}/speak`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
