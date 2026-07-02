@@ -43,7 +43,7 @@ Readvox/     Material de referencia (snapshot de readvox.com).
 |---|---|---|
 | 1 | Motor TTS: Piper, 4 idiomas, velocidad, diccionarios, API local, CLI | ✅ |
 | 2 | Extensión Brave: leer selección, leer desde aquí, resaltado | ✅ |
-| 3 | Cliente escritorio: hotkeys globales, portapapeles, PDF/txt/md | ⏳ |
+| 3 | Cliente escritorio: hotkeys globales, portapapeles, PDF/txt/md | ✅ |
 | 4 | Dictado: whisper.cpp local, escritura en el input activo | ⏳ |
 | 5 | Tono de voz (grave/agudo), motor Kokoro opcional | ⏳ |
 | 5b | Clonación de voz: entrenamiento en Colab gratuito → voz local `.onnx` | ⏳ |

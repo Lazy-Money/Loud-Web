@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loudvox-desktop"
+version = "0.1.0"
+description = "Cliente de escritorio LoudVox: hotkeys globales, lectura de selección y archivos."
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    # Versiones fijadas: se sabe exactamente qué código corre.
+    "pynput==1.8.2",
+    "pyperclip==1.11.0",
+    "pypdf==6.14.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2"]
+
+[project.scripts]
+loudvox-desktop = "loudvox_desktop.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["loudvox_desktop*"]
