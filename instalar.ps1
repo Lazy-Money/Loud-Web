@@ -40,6 +40,8 @@ $T = @{
     gpu_dir     = "Carpeta de las DLLs de CUDA"
     gpu_dir_bad = "No hay cublas64*.dll ahi: el dictado queda en CPU."
     gpu_cpu     = "El dictado usara CPU."
+    gpu_ok      = "GPU VERIFICADA: el dictado usara la placa de video."
+    gpu_fail    = "La verificacion de GPU fallo: el dictado queda en CPU (funciona igual)."
     dl_model    = "Descargando el modelo de dictado..."
     shortcuts   = "Accesos directos"
     autostart   = "Iniciar LoudVox automaticamente con Windows? [S/n]"
@@ -72,6 +74,8 @@ $T = @{
     gpu_dir     = "CUDA DLLs folder"
     gpu_dir_bad = "No cublas64*.dll there: dictation stays on CPU."
     gpu_cpu     = "Dictation will use CPU."
+    gpu_ok      = "GPU VERIFIED: dictation will use the graphics card."
+    gpu_fail    = "GPU verification failed: dictation stays on CPU (still works)."
     dl_model    = "Downloading the dictation model..."
     shortcuts   = "Shortcuts"
     autostart   = "Start LoudVox automatically with Windows? [Y/n]"
@@ -104,6 +108,8 @@ $T = @{
     gpu_dir     = "Cartella delle DLL CUDA"
     gpu_dir_bad = "Nessuna cublas64*.dll li: la dettatura resta su CPU."
     gpu_cpu     = "La dettatura usera la CPU."
+    gpu_ok      = "GPU VERIFICATA: la dettatura usera la scheda video."
+    gpu_fail    = "Verifica GPU fallita: la dettatura resta su CPU (funziona comunque)."
     dl_model    = "Scaricamento del modello di dettatura..."
     shortcuts   = "Collegamenti"
     autostart   = "Avviare LoudVox automaticamente con Windows? [S/n]"
@@ -136,6 +142,8 @@ $T = @{
     gpu_dir     = "Ordner der CUDA-DLLs"
     gpu_dir_bad = "Keine cublas64*.dll dort: Diktat bleibt auf CPU."
     gpu_cpu     = "Diktat verwendet die CPU."
+    gpu_ok      = "GPU VERIFIZIERT: Diktat nutzt die Grafikkarte."
+    gpu_fail    = "GPU-Pruefung fehlgeschlagen: Diktat bleibt auf CPU (funktioniert trotzdem)."
     dl_model    = "Diktatmodell wird geladen..."
     shortcuts   = "Verknuepfungen"
     autostart   = "LoudVox automatisch mit Windows starten? [J/n]"
@@ -218,13 +226,30 @@ try {
         $device = "cpu"
         if ($d -eq "2") {
             $device = "cuda"
-            # 1. BUSCAR primero: recursivamente cerca del modelo (Purfview
-            #    guarda cublas/cudnn en _xxl_data\torch\lib, carpeta lateral)
+
+            # Las DLLs se instalan JUNTO a ctranslate2.dll (site-packages):
+            # es el unico lugar donde Windows las encuentra siempre, sin
+            # depender de PATH. Metodo canonico del issue #715 de
+            # faster-whisper.
+            $ct2dir = python -c "import ctranslate2, os; print(os.path.dirname(ctranslate2.__file__))"
+            $requeridas = @("cublas64_12.dll", "cublasLt64_12.dll", "cudnn64_8.dll",
+                            "cudnn_ops_infer64_8.dll", "cudnn_cnn_infer64_8.dll")
+
+            function Copiar-DLLs($srcDirs) {
+                foreach ($dll in $requeridas) {
+                    foreach ($src in $srcDirs) {
+                        $f = Join-Path $src $dll
+                        if (Test-Path $f) { Copy-Item $f $ct2dir -Force; break }
+                    }
+                }
+            }
+
+            # 1. BUSCAR primero cerca del modelo (Purfview: _xxl_data\torch\lib)
             $dllDir = $null
             if ($op -eq "3" -and $ruta) {
                 $probe = $ruta
                 foreach ($i in 1..3) {
-                    $hit = Get-ChildItem -Path $probe -Recurse -Filter "cublas64*.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+                    $hit = Get-ChildItem -Path $probe -Recurse -Filter "cudnn_ops_infer64_8.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
                     if ($hit) { $dllDir = $hit.DirectoryName; break }
                     $probe = Split-Path $probe -Parent
                     if (-not $probe) { break }
@@ -232,7 +257,7 @@ try {
             }
             if ($dllDir) {
                 Write-Host "$($M.gpu_found)  [$dllDir]" -ForegroundColor Green
-                python -c "from loudvox.config import load, save; cfg = load(); cfg.stt_dll_dir = r'$dllDir'; save(cfg)"
+                Copiar-DLLs @($dllDir)
             } else {
                 # 2. No estan: instalar / indicar carpeta / seguir con CPU
                 Write-Host $M.gpu_menu
@@ -241,16 +266,27 @@ try {
                     # cuDNN fijado en 8.x: es lo que requiere ctranslate2 4.4
                     # (la 9.x instala DLLs *_9 y el motor pide *_8)
                     python -m pip install --quiet "nvidia-cublas-cu12==12.4.5.8" "nvidia-cudnn-cu12==8.9.7.29"
+                    $nvdir = python -c "import nvidia, os; print(os.path.dirname(nvidia.__file__))"
+                    Copiar-DLLs @((Join-Path $nvdir "cublas\bin"), (Join-Path $nvdir "cudnn\bin"))
                 } elseif ($g -eq "2") {
                     $dir = Read-Host $M.gpu_dir
-                    if (Get-ChildItem -Path $dir -Filter "cublas64*.dll" -ErrorAction SilentlyContinue) {
-                        python -c "from loudvox.config import load, save; cfg = load(); cfg.stt_dll_dir = r'$dir'; save(cfg)"
-                    } else {
-                        Write-Host $M.gpu_dir_bad -ForegroundColor Yellow
-                        $device = "cpu"
-                    }
+                    Copiar-DLLs @($dir)
                 } else {
                     Write-Host $M.gpu_cpu
+                    $device = "cpu"
+                }
+            }
+
+            # 3. VERIFICAR: las 5 DLLs presentes junto al motor + GPU visible.
+            #    Si algo falta, se configura CPU y se dice claramente.
+            if ($device -eq "cuda") {
+                $faltan = @($requeridas | Where-Object { -not (Test-Path (Join-Path $ct2dir $_)) })
+                $gpus = python -c "import ctranslate2; print(ctranslate2.get_cuda_device_count())"
+                if ($faltan.Count -eq 0 -and [int]$gpus -ge 1) {
+                    Write-Host "$($M.gpu_ok) ($gpus GPU)" -ForegroundColor Green
+                } else {
+                    if ($faltan.Count -gt 0) { Write-Host "$($M.gpu_fail) [faltan: $($faltan -join ', ')]" -ForegroundColor Yellow }
+                    else { Write-Host "$($M.gpu_fail) [ctranslate2 no ve la GPU]" -ForegroundColor Yellow }
                     $device = "cpu"
                 }
             }
