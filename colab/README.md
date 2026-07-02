@@ -65,6 +65,11 @@ en `config.json`:
 
 Reiniciá `loudvox-desktop`. Tu voz, 100% local.
 
+## Entrenar SIN internet (local, con tu GPU)
+
+Ver [ENTRENAR_LOCAL.md](ENTRENAR_LOCAL.md): mismo proceso corriendo en tu
+propia máquina vía WSL2 — cero nube.
+
 ## Alternativa sin entrenamiento (PC potente)
 
 Chatterbox (Resemble AI, MIT) clona con 10 segundos de muestra, pero el

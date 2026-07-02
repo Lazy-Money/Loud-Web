@@ -19,7 +19,9 @@ _is_open = False
 
 LANG_NAMES = {"es": "Español", "en": "English", "it": "Italiano", "de": "Deutsch"}
 ENGINE_LABELS = {"piper": "Piper", "kokoro": "Kokoro"}
-STT_MODELS = ["base", "small", "medium", "large-v3"]
+# large-v2 y no v3: la v3 tiene problemas conocidos (más alucinaciones y
+# repeticiones, especialmente fuera del inglés); v2 es la estable de facto.
+STT_MODELS = ["base", "small", "medium", "large-v2"]
 
 
 def open_settings(app) -> None:
