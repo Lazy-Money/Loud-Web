@@ -238,7 +238,9 @@ try {
                 Write-Host $M.gpu_menu
                 $g = Read-Host "$($M.option) [1/2/3]"
                 if ($g -eq "1") {
-                    python -m pip install --quiet nvidia-cublas-cu12 nvidia-cudnn-cu12
+                    # cuDNN fijado en 8.x: es lo que requiere ctranslate2 4.4
+                    # (la 9.x instala DLLs *_9 y el motor pide *_8)
+                    python -m pip install --quiet "nvidia-cublas-cu12==12.4.5.8" "nvidia-cudnn-cu12==8.9.7.29"
                 } elseif ($g -eq "2") {
                     $dir = Read-Host $M.gpu_dir
                     if (Get-ChildItem -Path $dir -Filter "cublas64*.dll" -ErrorAction SilentlyContinue) {

@@ -70,75 +70,105 @@ class Transcriber:
         self._model = None
         self._lock = threading.Lock()
 
-    def _add_nvidia_dll_dirs(self) -> None:
-        """Registra carpetas con DLLs de CUDA (solo Windows), en este orden:
+# DLLs que ctranslate2 4.4 (CUDA 12 + cuDNN 8) carga sí o sí en GPU.
+# Si falta alguna, tocar la GPU produce un aborto NATIVO incapturable:
+# hay que verificar ANTES y caer a CPU.
+_REQUIRED_CUDA_DLLS = ("cublas64_12.dll", "cudnn64_8.dll", "cudnn_ops_infer64_8.dll")
 
-        1. La carpeta del propio modelo (y su padre): las builds de
-           Purfview/Subtitle Edit traen cublas/cudnn AL LADO del modelo,
-           así que se reutilizan sin descargar nada.
-        2. Los paquetes pip de NVIDIA si están instalados
-           (nvidia-cublas-cu12 / nvidia-cudnn-cu12).
-        """
+
+class _CudaDlls:
+    """Localiza las DLLs de CUDA y las expone al cargador de Windows."""
+
+    def __init__(self, model_path: str, dll_dir: str):
+        self.model_path = model_path
+        self.dll_dir = dll_dir
+
+    def _candidate_dirs(self) -> list[str]:
         import os
-        import sys
 
-        if sys.platform != "win32":
-            return
-
-        def add(d):
-            if os.path.isdir(d):
-                try:
-                    os.add_dll_directory(d)
-                except OSError:
-                    pass
-
-        # 0. Carpeta explícita del usuario (config: stt_dll_dir)
-        if self.dll_dir:
-            add(self.dll_dir)
-
-        # 1. Cerca del modelo (ruta local tipo Purfview). Estructura real:
-        #    Purfview-Whisper-Faster\
-        #      _models\faster-whisper-large-v2\   <- model.bin
-        #      _xxl_data\torch\lib\               <- cublas/cudnn (¡lateral!)
-        #    Subimos hasta 2 niveles y buscamos recursivamente ahí adentro.
-        if os.path.isdir(self.model_size):
+        dirs: list[str] = []
+        if self.dll_dir and os.path.isdir(self.dll_dir):
+            dirs.append(self.dll_dir)
+        # Cerca del modelo (Purfview: _models\... y _xxl_data\torch\lib son
+        # subárboles hermanos: subir hasta 2 niveles y buscar recursivo)
+        if os.path.isdir(self.model_path):
             from pathlib import Path
 
+            d = os.path.abspath(self.model_path)
             ancestors = []
-            d = os.path.abspath(self.model_size)
             for _ in range(3):
-                add(d)
                 ancestors.append(d)
                 d = os.path.dirname(d)
-            for pattern in ("cublas64*.dll", "cudnn64*.dll"):
-                for root in ancestors:
-                    try:
-                        hit = next(Path(root).rglob(pattern), None)
-                    except OSError:
-                        hit = None
-                    if hit:
-                        add(str(hit.parent))
-                        break
-
-        # 2. Paquetes pip de NVIDIA
+            for root in ancestors:
+                try:
+                    hit = next(Path(root).rglob("cublas64*.dll"), None)
+                except OSError:
+                    hit = None
+                if hit:
+                    dirs.append(str(hit.parent))
+                    break
+        # Paquetes pip de NVIDIA
         try:
-            import nvidia  # noqa: F401
+            import nvidia
+
+            base = os.path.dirname(nvidia.__file__)
+            for sub in os.listdir(base):
+                for leaf in ("bin", "lib"):
+                    p = os.path.join(base, sub, leaf)
+                    if os.path.isdir(p):
+                        dirs.append(p)
         except ImportError:
-            return
-        base = os.path.dirname(nvidia.__file__)
-        for sub in os.listdir(base):
-            for leaf in ("bin", "lib"):
-                add(os.path.join(base, sub, leaf))
+            pass
+        # PATH del sistema (CUDA Toolkit instalado a mano)
+        dirs.extend(p for p in os.environ.get("PATH", "").split(os.pathsep) if p)
+        return dirs
+
+    def preflight(self) -> tuple[bool, str]:
+        """(ok, detalle). Si ok, además registra las carpetas halladas."""
+        import os
+
+        dirs = self._candidate_dirs()
+        found: dict[str, str] = {}
+        for dll in _REQUIRED_CUDA_DLLS:
+            for d in dirs:
+                if os.path.exists(os.path.join(d, dll)):
+                    found[dll] = d
+                    break
+        missing = [d for d in _REQUIRED_CUDA_DLLS if d not in found]
+        if missing:
+            return False, f"faltan {', '.join(missing)}"
+        # Registrar por las dos vías: add_dll_directory (Python) y PATH
+        # (los LoadLibrary internos de cuDNN no siempre miran la primera).
+        for d in dict.fromkeys(found.values()):
+            try:
+                os.add_dll_directory(d)
+            except OSError:
+                pass
+            os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
+        return True, f"DLLs en {', '.join(dict.fromkeys(found.values()))}"
 
     def _load(self):
         if self._model is None:
             import os
+            import sys
 
             os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
             from faster_whisper import WhisperModel
 
-            if self.device == "cuda":
-                self._add_nvidia_dll_dirs()
+            if self.device == "cuda" and sys.platform == "win32":
+                # Verificación PREVIA: si falta una DLL, ctranslate2 aborta el
+                # proceso entero (incapturable). Mejor detectarlo antes.
+                ok, detail = _CudaDlls(self.model_size, self.dll_dir).preflight()
+                if ok:
+                    print(f"[loudvox] GPU lista ({detail})")
+                else:
+                    print(
+                        f"[loudvox] GPU desactivada para el dictado: {detail}. "
+                        "Se usa CPU. (Las DLLs deben ser CUDA 12 + cuDNN 8, "
+                        "las mismas que trae Purfview/Subtitle Edit.)"
+                    )
+                    self.device = "cpu"
+                    self.compute = "int8"
             try:
                 self._model = WhisperModel(
                     self.model_size, device=self.device, compute_type=self.compute
@@ -146,12 +176,7 @@ class Transcriber:
             except Exception as exc:
                 if self.device != "cuda":
                     raise
-                # GPU sin CUDA/cuDNN disponibles: caer a CPU en vez de romper.
-                print(
-                    f"[loudvox] GPU no disponible para el dictado ({exc}); "
-                    "usando CPU. Para GPU: pip install nvidia-cublas-cu12 "
-                    "nvidia-cudnn-cu12"
-                )
+                print(f"[loudvox] GPU no disponible ({exc}); usando CPU.")
                 self.device = "cpu"
                 self.compute = "int8"
                 self._model = WhisperModel(
