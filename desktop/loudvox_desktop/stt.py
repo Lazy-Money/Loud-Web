@@ -90,11 +90,15 @@ class Transcriber:
                 except OSError:
                     pass
 
-        # 1. Junto al modelo (ruta local tipo Purfview)
+        # 1. Junto al modelo (ruta local tipo Purfview). Su estructura es
+        #    Purfview-Whisper-Faster\           <- acá viven cublas/cudnn
+        #      _models\faster-whisper-large-v2\ <- acá está model.bin
+        #    así que hay que subir hasta 2 niveles desde el modelo.
         if os.path.isdir(self.model_size):
-            model_dir = os.path.abspath(self.model_size)
-            add(model_dir)
-            add(os.path.dirname(model_dir))
+            d = os.path.abspath(self.model_size)
+            for _ in range(3):
+                add(d)
+                d = os.path.dirname(d)
 
         # 2. Paquetes pip de NVIDIA
         try:

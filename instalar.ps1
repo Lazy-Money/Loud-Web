@@ -35,6 +35,7 @@ $T = @{
     bad_path    = "No encontre model.bin ahi; el dictado queda sin configurar."
     dev_menu    = "  1) CPU (cualquier PC)`n  2) GPU NVIDIA/CUDA (mas rapido)"
     gpu_libs    = "La GPU necesita las librerias CUDA de NVIDIA (~600 MB via pip). Instalarlas ahora? [s/N]"
+    gpu_found   = "Librerias CUDA encontradas junto a tu modelo: se reutilizan, no hay que descargar nada."
     dl_model    = "Descargando el modelo de dictado..."
     shortcuts   = "Accesos directos"
     autostart   = "Iniciar LoudVox automaticamente con Windows? [S/n]"
@@ -62,6 +63,7 @@ $T = @{
     bad_path    = "model.bin not found there; dictation left unconfigured."
     dev_menu    = "  1) CPU (any PC)`n  2) NVIDIA/CUDA GPU (faster)"
     gpu_libs    = "GPU needs NVIDIA's CUDA libraries (~600 MB via pip). Install them now? [y/N]"
+    gpu_found   = "CUDA libraries found next to your model: reusing them, nothing to download."
     dl_model    = "Downloading the dictation model..."
     shortcuts   = "Shortcuts"
     autostart   = "Start LoudVox automatically with Windows? [Y/n]"
@@ -89,6 +91,7 @@ $T = @{
     bad_path    = "model.bin non trovato; dettatura non configurata."
     dev_menu    = "  1) CPU (qualsiasi PC)`n  2) GPU NVIDIA/CUDA (piu veloce)"
     gpu_libs    = "La GPU richiede le librerie CUDA di NVIDIA (~600 MB via pip). Installarle ora? [s/N]"
+    gpu_found   = "Librerie CUDA trovate accanto al modello: riutilizzate, niente da scaricare."
     dl_model    = "Scaricamento del modello di dettatura..."
     shortcuts   = "Collegamenti"
     autostart   = "Avviare LoudVox automaticamente con Windows? [S/n]"
@@ -116,6 +119,7 @@ $T = @{
     bad_path    = "model.bin dort nicht gefunden; Diktat bleibt unkonfiguriert."
     dev_menu    = "  1) CPU (jeder PC)`n  2) NVIDIA/CUDA-GPU (schneller)"
     gpu_libs    = "Die GPU benoetigt NVIDIAs CUDA-Bibliotheken (~600 MB via pip). Jetzt installieren? [j/N]"
+    gpu_found   = "CUDA-Bibliotheken neben dem Modell gefunden: werden wiederverwendet, kein Download noetig."
     dl_model    = "Diktatmodell wird geladen..."
     shortcuts   = "Verknuepfungen"
     autostart   = "LoudVox automatisch mit Windows starten? [J/n]"
@@ -198,9 +202,26 @@ try {
         $device = "cpu"
         if ($d -eq "2") {
             $device = "cuda"
-            $g = Read-Host $M.gpu_libs
-            if ($g -match "^$yes") {
-                python -m pip install --quiet nvidia-cublas-cu12 nvidia-cudnn-cu12
+            # Buscar DLLs de CUDA junto al modelo (Purfview/Subtitle Edit las
+            # trae en la raiz de su carpeta, 2 niveles arriba del modelo)
+            $dllsFound = $false
+            if ($op -eq "3" -and $ruta) {
+                $probe = $ruta
+                foreach ($i in 1..3) {
+                    if (Get-ChildItem -Path $probe -Filter "cublas64*.dll" -ErrorAction SilentlyContinue) {
+                        $dllsFound = $true; break
+                    }
+                    $probe = Split-Path $probe -Parent
+                    if (-not $probe) { break }
+                }
+            }
+            if ($dllsFound) {
+                Write-Host $M.gpu_found -ForegroundColor Green
+            } else {
+                $g = Read-Host $M.gpu_libs
+                if ($g -match "^$yes") {
+                    python -m pip install --quiet nvidia-cublas-cu12 nvidia-cudnn-cu12
+                }
             }
         }
         python -c "from loudvox.config import load, save; cfg = load(); cfg.stt_model = '$sttModel'; cfg.stt_device = '$device'; cfg.stt_preload = True; save(cfg)"
