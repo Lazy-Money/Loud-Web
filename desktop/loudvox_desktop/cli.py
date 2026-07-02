@@ -11,7 +11,24 @@ import argparse
 import sys
 
 
+def _setup_headless_io() -> None:
+    """Con pythonw (sin consola) sys.stdout/err son None y print() rompería.
+    Redirigimos a un log en la carpeta de datos para poder diagnosticar."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    from loudvox.config import data_dir
+
+    log_path = data_dir() / "loudvox.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log = open(log_path, "a", encoding="utf-8", buffering=1)
+    if sys.stdout is None:
+        sys.stdout = log
+    if sys.stderr is None:
+        sys.stderr = log
+
+
 def main(argv: list[str] | None = None) -> int:
+    _setup_headless_io()
     parser = argparse.ArgumentParser(prog="loudvox-desktop", description=__doc__)
     sub = parser.add_subparsers(dest="command")
 

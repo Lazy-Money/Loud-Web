@@ -39,7 +39,7 @@ def test_region_mexico(tmp_path):
     fake_voice(tmp_path, "es_MX-claude-high", "es_MX", "claude")
     (entry,) = list_catalog(tmp_path)
     assert entry["region"] == "México" and entry["lang"] == "es"
-    assert entry["label"] == "México — Claude"  # sin género confirmado
+    assert entry["label"] == "México — Claude (femenino)"  # confirmado a oído
 
 
 def test_kokoro_solo_si_modelo_instalado(tmp_path):

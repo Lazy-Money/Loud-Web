@@ -53,6 +53,10 @@ def _window(app) -> None:
     catalog = list_catalog(cfg.resolved_voices_dir())
     engines = sorted({e["engine"] for e in catalog}) or ["piper"]
 
+    def refresh_catalog():
+        nonlocal catalog
+        catalog = list_catalog(cfg.resolved_voices_dir())
+
     root = tk.Tk()
     root.title("LoudVox — Configuración")
     root.geometry("480x620")
@@ -201,10 +205,31 @@ def _window(app) -> None:
         except Exception as exc:
             status.config(text=f"Error al guardar: {exc}")
 
+    def descargar_idioma():
+        lang = selected_lang()
+        status.config(text=f"⬇ Descargando voces de {LANG_NAMES[lang]}… (una vez)")
+
+        def go():
+            try:
+                from loudvox.downloader import download_language
+
+                download_language(lang, cfg.resolved_voices_dir())
+                refresh_catalog()
+                app.reload_runtime()
+                root.after(0, sync_voices)
+                status.config(text=f"✔ Voces de {LANG_NAMES[lang]} instaladas.")
+            except Exception as exc:
+                status.config(text=f"Error al descargar: {exc}")
+
+        threading.Thread(target=go, daemon=True).start()
+
     btns = ttk.Frame(frame)
     btns.grid(row=7, column=0, columnspan=3, pady=14)
     ttk.Button(btns, text="🔊 Probar voz", command=probar).pack(side="left", padx=6)
     ttk.Button(btns, text="💾 Guardar", command=guardar).pack(side="left", padx=6)
+    ttk.Button(btns, text="⬇ Bajar voces del idioma", command=descargar_idioma).pack(
+        side="left", padx=6
+    )
     ttk.Button(btns, text="Cerrar", command=root.destroy).pack(side="left", padx=6)
 
     # --- atajos ---

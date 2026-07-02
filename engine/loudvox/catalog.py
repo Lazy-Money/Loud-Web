@@ -27,6 +27,8 @@ REGION_NAMES = {
 # Género por nombre de dataset Piper (solo los confirmados; el resto sin dato)
 _PIPER_GENDER = {
     "davefx": "M",
+    "claude": "F",  # es_MX, confirmado a oído
+    "ald": "M",  # es_MX, confirmado a oído
     "amy": "F",
     "alan": "M",
     "paola": "F",
