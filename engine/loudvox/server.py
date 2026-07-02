@@ -52,11 +52,15 @@ class _Handler(BaseHTTPRequestHandler):
         if self.path == "/health":
             self._json(200, {"status": "ok", "version": __version__})
         elif self.path == "/voices":
+            from .catalog import list_catalog
+
             self._json(
                 200,
                 {
                     "voices": self.backend.list_voices(),
+                    "catalog": list_catalog(self.cfg.resolved_voices_dir()),
                     "language": self.cfg.language,
+                    "engine": self.cfg.engine,
                     "default_voice": self.cfg.resolved_voice(),
                 },
             )
@@ -91,11 +95,12 @@ class _Handler(BaseHTTPRequestHandler):
             speed = float(data.get("speed") or params["speed"])
             volume = float(data.get("volume") or params["volume"])
             pitch = float(data.get("pitch", params["pitch"]))
+            speaker = data.get("speaker", params["speaker"])
             if data.get("normalize", True):
                 text = _normalizer(lang).normalize(text)
             try:
                 wav = self.backend.synthesize(
-                    text, voice, speed=speed, volume=volume, speaker=params["speaker"]
+                    text, voice, speed=speed, volume=volume, speaker=speaker
                 )
                 if pitch:
                     from .audio import apply_pitch

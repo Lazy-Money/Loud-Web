@@ -24,9 +24,24 @@ async function ensureOffscreen() {
 }
 
 async function getSettings() {
-  const defaults = { language: "es", voice: "", speed: 1.0, volume: 1.0, pitch: 0 };
+  const defaults = {
+    language: "es", voice: "", speaker: null,
+    speed: 1.0, volume: 1.0, pitch: 0,
+  };
   const stored = await chrome.storage.local.get(defaults);
   return { ...defaults, ...stored };
+}
+
+async function playBlocks(blocks, highlight) {
+  const settings = await getSettings();
+  await ensureOffscreen();
+  chrome.runtime.sendMessage({
+    type: "lv-play",
+    target: "offscreen",
+    blocks,
+    settings,
+    highlight,
+  });
 }
 
 // Pide los bloques al content script; si no está (pestaña abierta antes de
@@ -96,15 +111,7 @@ async function startReading(mode, tabId) {
     return;
   }
 
-  const settings = await getSettings();
-  await ensureOffscreen();
-  chrome.runtime.sendMessage({
-    type: "lv-play",
-    target: "offscreen",
-    blocks,
-    settings,
-    highlight: mode !== "selection",
-  });
+  await playBlocks(blocks, mode !== "selection");
 }
 
 async function stopReading() {
@@ -178,6 +185,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     } else if (msg.type === "lv-start") {
       startReading(msg.mode, msg.tabId).then(() => sendResponse({}));
       return true; // respuesta asíncrona
+    } else if (msg.type === "lv-test") {
+      currentTabId = null; // sin resaltado: es solo una prueba de voz
+      playBlocks([msg.sample], false).then(() => sendResponse({}));
+      return true;
     } else if (msg.type === "lv-stop") {
       stopReading().then(() => sendResponse({}));
       return true;
