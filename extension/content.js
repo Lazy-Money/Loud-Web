@@ -50,6 +50,11 @@
 
   function collect(mode) {
     clearHighlight();
+    // Visor de PDF nativo: acá no hay texto accesible; avisar al service
+    // worker para que redirija al lector LoudVox.
+    if (document.contentType === "application/pdf") {
+      return { pdf: true, url: location.href };
+    }
     const sel = window.getSelection();
 
     if (mode === "selection") {

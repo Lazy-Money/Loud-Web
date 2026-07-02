@@ -96,6 +96,25 @@ const params = new URLSearchParams(location.search);
 const urlParam = params.get("url");
 const autoread = params.get("autoread") === "1";
 
+if (params.get("hint") === "file") {
+  content.innerHTML = `
+    <div id="placeholder" style="text-align:left; max-width:34em; margin:8vh auto;">
+      <p><strong>Ese PDF está en tu computadora</strong> y Brave no deja que
+      LoudVox lo vea sin un permiso extra.</p>
+      <p>Dos opciones:</p>
+      <p><strong>A) La rápida:</strong> usá el botón <strong>📂 Abrir PDF…</strong>
+      de arriba y elegí el archivo. Listo.</p>
+      <p><strong>B) La definitiva (una sola vez):</strong></p>
+      <ol>
+        <li>Abrí <code>brave://extensions</code></li>
+        <li>En LoudVox tocá <strong>Detalles</strong></li>
+        <li>Activá <strong>“Permitir el acceso a las URL de archivo”</strong></li>
+      </ol>
+      <p>Con eso, el clic derecho → “Leer” sobre cualquier PDF local va a
+      abrir este lector y empezar a leer solo.</p>
+    </div>`;
+}
+
 if (urlParam) {
   fetch(urlParam)
     .then((r) => r.arrayBuffer())

@@ -53,12 +53,24 @@ async function startReading(mode, tabId) {
   try {
     collected = await collectFromTab(tab.id, mode);
   } catch (e) {
+    const url = tab.url || tab.pendingUrl || "";
     // ¿Es el visor de PDF nativo? Redirigir a nuestro lector y leer solo.
-    if (tab.url && /\.pdf(\?|#|$)/i.test(tab.url)) {
-      const viewer = chrome.runtime.getURL(
-        `viewer.html?url=${encodeURIComponent(tab.url)}&autoread=1`
-      );
-      chrome.tabs.update(tab.id, { url: viewer });
+    if (/\.pdf(\?|#|$)/i.test(url)) {
+      chrome.tabs.update(tab.id, {
+        url: chrome.runtime.getURL(
+          `viewer.html?url=${encodeURIComponent(url)}&autoread=1`
+        ),
+      });
+      return;
+    }
+    // URL invisible: casi seguro un archivo local (PDF) sin el permiso
+    // "Permitir el acceso a las URL de archivo". Abrir el lector con la
+    // explicación, que es visible sí o sí (las notificaciones pueden estar
+    // silenciadas por Windows).
+    if (!url || url.startsWith("file:")) {
+      chrome.tabs.create({
+        url: chrome.runtime.getURL("viewer.html?hint=file"),
+      });
       return;
     }
     // Página vedada para extensiones: brave://, chrome://, Web Store.
@@ -68,6 +80,16 @@ async function startReading(mode, tabId) {
     );
     return;
   }
+  // El content script detectó el visor de PDF nativo: llevarlo al lector.
+  if (collected?.pdf) {
+    chrome.tabs.update(tab.id, {
+      url: chrome.runtime.getURL(
+        `viewer.html?url=${encodeURIComponent(collected.url)}&autoread=1`
+      ),
+    });
+    return;
+  }
+
   const blocks = (collected?.blocks || []).map((b) => b.text).filter(Boolean);
   if (blocks.length === 0) {
     if (mode === "selection") notify("No hay texto seleccionado.");

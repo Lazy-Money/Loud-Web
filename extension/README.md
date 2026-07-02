@@ -13,7 +13,10 @@ máquina: la extensión solo habla con `http://127.0.0.1:5089`.
 3. Activá **"Modo de desarrollador"** (interruptor arriba a la derecha)
 4. Clic en **"Cargar extensión sin empaquetar"** (Load unpacked)
 5. Seleccioná la carpeta `extension/` de este repo
-6. Listo: aparece el ícono de LoudVox en la barra
+6. **Para PDFs locales**: en la tarjeta de LoudVox tocá **Detalles** y activá
+   **"Permitir el acceso a las URL de archivo"** — sin esto, el clic derecho
+   sobre un PDF de tu disco no puede redirigir al lector
+7. Listo: aparece el ícono de LoudVox en la barra
 
 ## Uso
 
