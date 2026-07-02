@@ -1,0 +1,40 @@
+# Diccionario de abreviaturas — Español
+# formato: abreviatura,expansión_singular,expansión_plural,modo
+# modo "unit": solo se expande después de un número (10 m -> 10 metros)
+# modo "word": se expande siempre como palabra completa (Dr. -> Doctor)
+mm,milímetro,milímetros,unit
+cm,centímetro,centímetros,unit
+m,metro,metros,unit
+km,kilómetro,kilómetros,unit
+mg,miligramo,miligramos,unit
+g,gramo,gramos,unit
+kg,kilogramo,kilogramos,unit
+ml,mililitro,mililitros,unit
+l,litro,litros,unit
+s,segundo,segundos,unit
+seg,segundo,segundos,unit
+min,minuto,minutos,unit
+h,hora,horas,unit
+km/h,kilómetros por hora,kilómetros por hora,unit
+m/s,metros por segundo,metros por segundo,unit
+°C,grados Celsius,grados Celsius,unit
+%,por ciento,por ciento,unit
+€,euros,euros,unit
+Dr.,Doctor,,word
+Dra.,Doctora,,word
+Sr.,Señor,,word
+Sra.,Señora,,word
+Srta.,Señorita,,word
+Ud.,Usted,,word
+Uds.,Ustedes,,word
+EE. UU.,Estados Unidos,,word
+EE.UU.,Estados Unidos,,word
+etc.,etcétera,,word
+pág.,página,,word
+págs.,páginas,,word
+núm.,número,,word
+art.,artículo,,word
+cap.,capítulo,,word
+tel.,teléfono,,word
+avda.,avenida,,word
+p. ej.,por ejemplo,,word

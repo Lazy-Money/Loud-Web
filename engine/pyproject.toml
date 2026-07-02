@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loudvox"
+version = "0.1.0"
+description = "Motor local de texto a voz y dictado. 100% offline, sin telemetría."
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    # Versiones fijadas: se sabe exactamente qué código corre.
+    "piper-tts==1.4.2",
+    "onnxruntime==1.27.0",
+    "numpy>=1.26,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2"]
+# GPU NVIDIA: pip install loudvox[gpu] reemplaza onnxruntime por la variante CUDA.
+gpu = ["onnxruntime-gpu==1.27.0"]
+
+[project.scripts]
+loudvox = "loudvox.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["loudvox*"]
+
+[tool.setuptools.package-data]
+loudvox = ["../dictionaries/*.csv"]

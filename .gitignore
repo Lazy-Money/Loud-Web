@@ -1,0 +1,16 @@
+# Modelos de voz descargados (pesados; se bajan con `loudvox download`)
+engine/voices/
+*.onnx
+*.onnx.json
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+
+# Audio generado en pruebas
+*.wav

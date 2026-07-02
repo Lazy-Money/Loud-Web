@@ -1,0 +1,48 @@
+# Abbreviation dictionary — English
+# format: abbreviation,singular_expansion,plural_expansion,mode
+# mode "unit": expanded only after a number (10 m -> 10 meters)
+# mode "word": always expanded as a whole word (Dr. -> Doctor)
+mm,millimeter,millimeters,unit
+cm,centimeter,centimeters,unit
+m,meter,meters,unit
+km,kilometer,kilometers,unit
+mi,mile,miles,unit
+ft,foot,feet,unit
+in,inch,inches,unit
+mg,milligram,milligrams,unit
+g,gram,grams,unit
+kg,kilogram,kilograms,unit
+lb,pound,pounds,unit
+lbs,pounds,pounds,unit
+oz,ounce,ounces,unit
+ml,milliliter,milliliters,unit
+l,liter,liters,unit
+s,second,seconds,unit
+sec,second,seconds,unit
+min,minute,minutes,unit
+h,hour,hours,unit
+hr,hour,hours,unit
+mph,miles per hour,miles per hour,unit
+km/h,kilometers per hour,kilometers per hour,unit
+°C,degrees Celsius,degrees Celsius,unit
+°F,degrees Fahrenheit,degrees Fahrenheit,unit
+%,percent,percent,unit
+$,dollars,dollars,unit
+Dr.,Doctor,,word
+Mr.,Mister,,word
+Mrs.,Missus,,word
+Ms.,Miss,,word
+St.,Saint,,word
+etc.,et cetera,,word
+e.g.,for example,,word
+i.e.,that is,,word
+vs.,versus,,word
+approx.,approximately,,word
+dept.,department,,word
+p.,page,,word
+pp.,pages,,word
+no.,number,,word
+tel.,telephone,,word
+ave.,avenue,,word
+U.S.,United States,,word
+U.K.,United Kingdom,,word

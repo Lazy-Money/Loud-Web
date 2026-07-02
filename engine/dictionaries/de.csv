@@ -1,0 +1,41 @@
+# Abkürzungswörterbuch — Deutsch
+# Format: Abkürzung,Singular-Erweiterung,Plural-Erweiterung,Modus
+# Modus "unit": nur nach einer Zahl erweitert (10 m -> 10 Meter)
+# Modus "word": immer als ganzes Wort erweitert (Dr. -> Doktor)
+mm,Millimeter,Millimeter,unit
+cm,Zentimeter,Zentimeter,unit
+m,Meter,Meter,unit
+km,Kilometer,Kilometer,unit
+mg,Milligramm,Milligramm,unit
+g,Gramm,Gramm,unit
+kg,Kilogramm,Kilogramm,unit
+ml,Milliliter,Milliliter,unit
+l,Liter,Liter,unit
+s,Sekunde,Sekunden,unit
+Sek.,Sekunde,Sekunden,unit
+min,Minute,Minuten,unit
+Min.,Minute,Minuten,unit
+h,Stunde,Stunden,unit
+Std.,Stunde,Stunden,unit
+km/h,Kilometer pro Stunde,Kilometer pro Stunde,unit
+°C,Grad Celsius,Grad Celsius,unit
+%,Prozent,Prozent,unit
+€,Euro,Euro,unit
+Dr.,Doktor,,word
+Hr.,Herr,,word
+Fr.,Frau,,word
+Prof.,Professor,,word
+usw.,und so weiter,,word
+z. B.,zum Beispiel,,word
+z.B.,zum Beispiel,,word
+d. h.,das heißt,,word
+d.h.,das heißt,,word
+bzw.,beziehungsweise,,word
+ca.,circa,,word
+ggf.,gegebenenfalls,,word
+Nr.,Nummer,,word
+S.,Seite,,word
+Tel.,Telefon,,word
+Str.,Straße,,word
+u. a.,unter anderem,,word
+evtl.,eventuell,,word

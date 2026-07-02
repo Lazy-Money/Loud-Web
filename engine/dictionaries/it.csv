@@ -1,0 +1,37 @@
+# Dizionario di abbreviazioni — Italiano
+# formato: abbreviazione,espansione_singolare,espansione_plurale,modo
+# modo "unit": espansa solo dopo un numero (10 m -> 10 metri)
+# modo "word": espansa sempre come parola intera (Dott. -> Dottore)
+mm,millimetro,millimetri,unit
+cm,centimetro,centimetri,unit
+m,metro,metri,unit
+km,chilometro,chilometri,unit
+mg,milligrammo,milligrammi,unit
+g,grammo,grammi,unit
+kg,chilogrammo,chilogrammi,unit
+ml,millilitro,millilitri,unit
+l,litro,litri,unit
+s,secondo,secondi,unit
+sec,secondo,secondi,unit
+min,minuto,minuti,unit
+h,ora,ore,unit
+km/h,chilometri orari,chilometri orari,unit
+°C,gradi Celsius,gradi Celsius,unit
+%,per cento,per cento,unit
+€,euro,euro,unit
+Dott.,Dottore,,word
+Dott.ssa,Dottoressa,,word
+Sig.,Signor,,word
+Sig.ra,Signora,,word
+Sig.na,Signorina,,word
+Prof.,Professor,,word
+Prof.ssa,Professoressa,,word
+ecc.,eccetera,,word
+pag.,pagina,,word
+pagg.,pagine,,word
+n.,numero,,word
+art.,articolo,,word
+cap.,capitolo,,word
+tel.,telefono,,word
+p. es.,per esempio,,word
+ad es.,ad esempio,,word
