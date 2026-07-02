@@ -30,35 +30,62 @@ python -m pip install --quiet "$repo\desktop"
 
 # --- 3. Voces de lectura -----------------------------------------------------
 Titulo "Voces de lectura"
-Write-Host "Espanol se instala siempre (~200 MB). Idiomas adicionales:"
-$langs = @("es")
-foreach ($extra in @(
-    @{code="en"; name="Ingles (~130 MB)"},
+Write-Host "Elegi que idiomas instalar (se pueden agregar despues desde Configuracion):"
+$langs = @()
+foreach ($lang in @(
+    @{code="es"; name="Espanol - Espana y Mexico (~250 MB)"},
+    @{code="en"; name="Ingles - EE.UU. y Reino Unido (~130 MB)"},
     @{code="it"; name="Italiano (~90 MB)"},
     @{code="de"; name="Aleman (~90 MB)"}
 )) {
-    $r = Read-Host ("  Instalar " + $extra.name + "? [s/N]")
-    if ($r -match "^[sSyY]") { $langs += $extra.code }
+    $r = Read-Host ("  Instalar " + $lang.name + "? [s/N]")
+    if ($r -match "^[sSyY]") { $langs += $lang.code }
+}
+if ($langs.Count -eq 0) {
+    Write-Host "No elegiste ninguno: se instala Ingles como minimo para que la app funcione." -ForegroundColor Yellow
+    $langs = @("en")
 }
 foreach ($l in $langs) {
     Write-Host "Descargando voces: $l"
     loudvox download $l
 }
+# Idioma inicial de la app = el primero elegido
+python -c @"
+from loudvox.config import load, save
+cfg = load()
+cfg.language = '$($langs[0])'
+save(cfg)
+print('Idioma inicial:', cfg.language)
+"@
 
 # --- 4. Dictado por voz (opcional) ------------------------------------------
 Titulo "Dictado por voz (hablar y que escriba)"
-Write-Host "Requiere descargar un modelo de reconocimiento (una sola vez):"
-Write-Host "  1) base   (~150 MB)  - liviano, para PC modestas"
-Write-Host "  2) small  (~500 MB)  - recomendado, buena precision en espanol"
-Write-Host "  3) no instalar ahora (se puede activar despues)"
-$op = Read-Host "Opcion [1/2/3]"
+Write-Host "Opciones de modelo de reconocimiento:"
+Write-Host "  1) base   (~150 MB, se descarga)  - liviano, para PC modestas"
+Write-Host "  2) small  (~500 MB, se descarga)  - recomendado, buena precision"
+Write-Host "  3) usar un modelo faster-whisper que YA TENGO en el disco"
+Write-Host "     (p. ej. el de Subtitle Edit / Purfview; sin descargas)"
+Write-Host "  4) no instalar el dictado ahora (se puede activar despues)"
+$op = Read-Host "Opcion [1/2/3/4]"
 $sttModel = $null
-if ($op -eq "1") { $sttModel = "base" }
-if ($op -eq "2") { $sttModel = "small" }
+$needsDownload = $false
+if ($op -eq "1") { $sttModel = "base";  $needsDownload = $true }
+if ($op -eq "2") { $sttModel = "small"; $needsDownload = $true }
+if ($op -eq "3") {
+    $ruta = Read-Host "Ruta de la carpeta del modelo (contiene model.bin)"
+    if (Test-Path (Join-Path $ruta "model.bin")) {
+        $sttModel = $ruta.Replace('\', '\\')
+    } else {
+        Write-Host "No encontre model.bin en esa carpeta; el dictado queda sin configurar." -ForegroundColor Yellow
+    }
+}
 if ($sttModel) {
-    $gpu = Read-Host "Tenes placa NVIDIA con CUDA y queres usarla para el dictado? [s/N]"
+    Write-Host "Procesador para el dictado:"
+    Write-Host "  1) CPU (funciona en cualquier PC)"
+    Write-Host "  2) GPU NVIDIA/CUDA (mas rapido; requiere drivers CUDA/cuDNN)"
+    $d = Read-Host "Opcion [1/2]"
     $device = "cpu"
-    if ($gpu -match "^[sSyY]") { $device = "cuda" }
+    if ($d -eq "2") { $device = "cuda" }
     # Escribir la config del usuario
     python -c @"
 from loudvox.config import load, save
@@ -66,16 +93,19 @@ cfg = load()
 cfg.stt_model = '$sttModel'
 cfg.stt_device = '$device'
 cfg.stt_preload = True
-print('Config de dictado:', save(cfg))
+save(cfg)
+print('Dictado configurado -> modelo:', cfg.stt_model, '| dispositivo:', cfg.stt_device)
 "@
-    Write-Host "Descargando el modelo de dictado ($sttModel)..."
-    python -c @"
+    if ($needsDownload) {
+        Write-Host "Descargando el modelo de dictado ($sttModel)..."
+        python -c @"
 import os
 os.environ.setdefault('HF_HUB_DISABLE_SYMLINKS_WARNING', '1')
 from faster_whisper import WhisperModel
 WhisperModel('$sttModel', device='cpu', compute_type='int8')
 print('Modelo de dictado listo.')
 "@
+    }
 }
 
 # --- 5. Accesos directos ------------------------------------------------------
@@ -101,7 +131,19 @@ if ($auto -notmatch "^[nN]") {
     Crear-Acceso "$startup\LoudVox.lnk" "-m loudvox_desktop.cli" "Inicio automatico"
 }
 
-# --- 6. Fin -------------------------------------------------------------------
+# --- 6. Resumen ----------------------------------------------------------------
+Titulo "Resumen de la instalacion"
+python -c @"
+from loudvox.config import load
+cfg = load()
+print(' Idioma inicial :', cfg.language)
+print(' Voz            :', cfg.resolved_voice())
+print(' Dictado        :', cfg.stt_model if cfg.stt_preload else '(no configurado)')
+print(' Dispositivo STT:', cfg.stt_device)
+print(' Config en      : se muestra con  loudvox config')
+"@
+
+# --- 7. Fin -------------------------------------------------------------------
 Titulo "Listo!"
 Write-Host "
  - LoudVox quedo instalado. Inicialo desde el Menu Inicio (LoudVox)
