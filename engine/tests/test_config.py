@@ -61,9 +61,14 @@ class TestConfigRoundtrip:
 
 class TestVoiceOverrides:
     def test_sin_override_usa_globales(self):
-        cfg = Config(speed=1.5, volume=0.8)
+        cfg = Config(speed=1.5, volume=0.8, pitch=-2.0)
         p = cfg.params_for("es_ES-davefx-medium")
-        assert p == {"speed": 1.5, "volume": 0.8, "speaker": None}
+        assert p == {"speed": 1.5, "volume": 0.8, "pitch": -2.0, "speaker": None}
+
+    def test_pitch_por_voz(self):
+        cfg = Config(pitch=0.0, voice_overrides={"v": {"pitch": -4}})
+        assert cfg.params_for("v")["pitch"] == -4.0
+        assert cfg.params_for("otra")["pitch"] == 0.0
 
     def test_override_pisa_global(self):
         cfg = Config(
