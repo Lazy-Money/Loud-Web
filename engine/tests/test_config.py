@@ -57,3 +57,32 @@ class TestConfigRoundtrip:
         path = tmp_path / "config.json"
         path.write_text('{"language": "en", "future_option": true}', encoding="utf-8")
         assert load(path).language == "en"
+
+
+class TestVoiceOverrides:
+    def test_sin_override_usa_globales(self):
+        cfg = Config(speed=1.5, volume=0.8)
+        p = cfg.params_for("es_ES-davefx-medium")
+        assert p == {"speed": 1.5, "volume": 0.8, "speaker": None}
+
+    def test_override_pisa_global(self):
+        cfg = Config(
+            speed=1.5,
+            voice_overrides={"es_ES-davefx-medium": {"speed": 1.1, "volume": 0.6}},
+        )
+        p = cfg.params_for("es_ES-davefx-medium")
+        assert p["speed"] == 1.1 and p["volume"] == 0.6
+
+    def test_override_parcial(self):
+        cfg = Config(speed=2.0, voice_overrides={"x": {"volume": 0.5}})
+        p = cfg.params_for("x")
+        assert p["speed"] == 2.0 and p["volume"] == 0.5
+
+    def test_speaker_multivoz(self):
+        cfg = Config(voice_overrides={"es_ES-sharvard-medium": {"speaker": 1}})
+        assert cfg.params_for("es_ES-sharvard-medium")["speaker"] == 1
+
+    def test_roundtrip_con_overrides(self, tmp_path):
+        path = tmp_path / "config.json"
+        save(Config(voice_overrides={"v": {"speed": 1.2}}), path)
+        assert load(path).params_for("v")["speed"] == 1.2

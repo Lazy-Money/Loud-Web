@@ -92,13 +92,30 @@ async function openFile(file) {
 
 // --- carga por URL (?url=…) para PDFs de internet --------------------------
 
-const urlParam = new URLSearchParams(location.search).get("url");
+const params = new URLSearchParams(location.search);
+const urlParam = params.get("url");
+const autoread = params.get("autoread") === "1";
+
 if (urlParam) {
   fetch(urlParam)
     .then((r) => r.arrayBuffer())
-    .then((buf) => renderPdf(new Uint8Array(buf), urlParam.split("/").pop()))
-    .catch((e) => {
-      content.innerHTML = `<p id='placeholder'>No se pudo descargar el PDF: ${e.message}</p>`;
+    .then(async (buf) => {
+      await renderPdf(new Uint8Array(buf), decodeURIComponent(urlParam).split("/").pop());
+      if (autoread && document.querySelector("#content p:not(#placeholder)")) {
+        window.getSelection()?.removeAllRanges();
+        chrome.runtime.sendMessage({ target: "background", type: "lv-start", mode: "page" });
+      }
+    })
+    .catch(() => {
+      const isFile = urlParam.startsWith("file:");
+      content.innerHTML =
+        `<p id='placeholder'>No se pudo abrir el PDF automáticamente.` +
+        (isFile
+          ? `<br><br>Para PDFs locales: activá <strong>“Permitir el acceso a las URL de archivo”</strong> ` +
+            `en <code>brave://extensions</code> → LoudVox → Detalles.<br>` +
+            `O simplemente usá el botón <strong>📂 Abrir PDF…</strong> de arriba.`
+          : ` Probá con el botón <strong>📂 Abrir PDF…</strong> de arriba.`) +
+        `</p>`;
     });
 }
 

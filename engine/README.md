@@ -91,11 +91,25 @@ formato. Tus entradas tienen prioridad sobre las incluidas.
 
 - `language`: `es` | `en` | `it` | `de`
 - `voice`: nombre de voz Piper (vacío = recomendada del idioma)
-- `speed`: velocidad de lectura (1.0 normal)
+- `speed`: velocidad de lectura (1.0 normal, 0.5–3.0)
+- `volume`: volumen (1.0 normal, 0.1–2.0)
 - `pitch`: tono en semitonos (Fase 5)
 - `use_gpu`: `true`/`false`
 - `hotkeys`: combinaciones personalizables, mínimo 2 teclas
   (`"ctrl+alt+r"`); sin restricciones sobre cuáles.
+- `voice_overrides`: ajustes por voz que pisan a los globales. Ideal para
+  emparejar voces que suenan más fuerte o más rápido que otras:
+
+```json
+"voice_overrides": {
+  "es_ES-davefx-medium":   { "volume": 0.6, "speed": 1.1 },
+  "es_ES-sharvard-medium": { "speaker": 0 }
+}
+```
+
+(`speaker` elige el hablante en voces multi-hablante como sharvard.)
+La precedencia es: pedido explícito (p. ej. el deslizador de la extensión)
+> override de la voz > global.
 
 ## Tests
 

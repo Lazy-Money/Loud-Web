@@ -86,11 +86,16 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             lang = data.get("language", self.cfg.language)
             voice = data.get("voice") or self.cfg.resolved_voice()
-            speed = float(data.get("speed", self.cfg.speed))
+            # Precedencia: pedido explícito > override por voz > global
+            params = self.cfg.params_for(voice)
+            speed = float(data.get("speed") or params["speed"])
+            volume = float(data.get("volume") or params["volume"])
             if data.get("normalize", True):
                 text = _normalizer(lang).normalize(text)
             try:
-                wav = self.backend.synthesize(text, voice, speed=speed)
+                wav = self.backend.synthesize(
+                    text, voice, speed=speed, volume=volume, speaker=params["speaker"]
+                )
             except (FileNotFoundError, ValueError) as exc:
                 self._json(400, {"error": str(exc)})
                 return

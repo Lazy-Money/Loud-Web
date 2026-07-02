@@ -53,10 +53,18 @@ async function startReading(mode, tabId) {
   try {
     collected = await collectFromTab(tab.id, mode);
   } catch (e) {
-    // Página vedada para extensiones: brave://, chrome://, visor de PDF, Web Store.
+    // ¿Es el visor de PDF nativo? Redirigir a nuestro lector y leer solo.
+    if (tab.url && /\.pdf(\?|#|$)/i.test(tab.url)) {
+      const viewer = chrome.runtime.getURL(
+        `viewer.html?url=${encodeURIComponent(tab.url)}&autoread=1`
+      );
+      chrome.tabs.update(tab.id, { url: viewer });
+      return;
+    }
+    // Página vedada para extensiones: brave://, chrome://, Web Store.
     notify(
-      "No se puede leer esta página (las páginas internas del navegador y el " +
-        "visor de PDF están bloqueados para extensiones)."
+      "No se puede leer esta página (las páginas internas del navegador " +
+        "están bloqueadas para extensiones)."
     );
     return;
   }

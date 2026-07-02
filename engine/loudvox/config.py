@@ -61,11 +61,27 @@ class Config:
     language: str = "es"
     voice: str = ""  # vacío = primera voz recomendada del idioma
     speed: float = 1.0  # 0.5 (lento) a 3.0 (rápido)
+    volume: float = 1.0  # 0.1 (bajo) a 2.0 (alto)
     pitch: float = 0.0  # semitonos, negativo = más grave (Fase 5)
     use_gpu: bool = False  # onnxruntime CUDA si está disponible
     engine: str = "piper"  # "piper" | "kokoro" (Fase 5)
     voices_dir: str = ""  # vacío = data_dir()/voices
     hotkeys: Hotkeys = field(default_factory=Hotkeys)
+    # Ajustes por voz que pisan a los globales cuando esa voz está en uso:
+    #   "voice_overrides": {
+    #     "es_ES-davefx-medium": {"speed": 1.1, "volume": 0.7},
+    #     "es_ES-sharvard-medium": {"speaker": 1}
+    #   }
+    voice_overrides: dict = field(default_factory=dict)
+
+    def params_for(self, voice: str) -> dict:
+        """Parámetros efectivos para una voz: override de la voz > global."""
+        ov = self.voice_overrides.get(voice, {})
+        return {
+            "speed": float(ov.get("speed", self.speed)),
+            "volume": float(ov.get("volume", self.volume)),
+            "speaker": ov.get("speaker"),
+        }
 
     def resolved_voice(self) -> str:
         if self.voice:

@@ -33,8 +33,14 @@ class DesktopApp:
 
     def _synthesize(self, text: str) -> bytes:
         text = self._normalizer.normalize(text)
+        voice = self.cfg.resolved_voice()
+        params = self.cfg.params_for(voice)
         return self.backend.synthesize(
-            text, self.cfg.resolved_voice(), speed=self.cfg.speed
+            text,
+            voice,
+            speed=params["speed"],
+            volume=params["volume"],
+            speaker=params["speaker"],
         )
 
     # --- acciones de hotkeys ---------------------------------------------

@@ -39,15 +39,26 @@ class PiperBackend(TTSBackend):
             )
         return self._loaded[voice]
 
-    def synthesize(self, text: str, voice: str, speed: float = 1.0) -> bytes:
+    def synthesize(
+        self,
+        text: str,
+        voice: str,
+        speed: float = 1.0,
+        volume: float = 1.0,
+        speaker: int | None = None,
+    ) -> bytes:
         from piper import SynthesisConfig
 
         if not 0.25 <= speed <= 4.0:
             raise ValueError(f"Velocidad fuera de rango [0.25, 4.0]: {speed}")
+        if not 0.1 <= volume <= 2.0:
+            raise ValueError(f"Volumen fuera de rango [0.1, 2.0]: {volume}")
         model = self._load(voice)
         # En Piper, length_scale es la duración de los fonemas: la inversa
         # de la velocidad percibida.
-        syn = SynthesisConfig(length_scale=1.0 / speed)
+        syn = SynthesisConfig(length_scale=1.0 / speed, volume=volume)
+        if speaker is not None:
+            syn.speaker_id = int(speaker)
         buf = io.BytesIO()
         with wave.open(buf, "wb") as wav_file:
             model.synthesize_wav(text, wav_file, syn_config=syn)
