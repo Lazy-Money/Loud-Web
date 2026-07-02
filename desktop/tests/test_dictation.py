@@ -131,3 +131,48 @@ def test_app_no_graba_hasta_que_el_modelo_este_listo(monkeypatch):
 
     app.toggle_dictation()  # ahora sí
     assert "toggle" in events
+
+
+def test_transcriber_real_tiene_su_api_completa():
+    """Regresión del bug 'Transcriber object has no attribute transcribe':
+    una edición rompió la clase real y los tests con fakes no lo vieron.
+    Este test instancia la clase VERDADERA (sin cargar modelos)."""
+    from loudvox_desktop.stt import Recorder, Transcriber, _CudaDlls
+
+    t = Transcriber(model_size="small", language="es", device="cpu")
+    assert callable(t.transcribe)
+    assert callable(t.preload)
+    assert callable(t._load)
+    assert t.compute == "int8" and t.dll_dir == ""
+
+    # configs viejas pueden traer None: no debe explotar
+    t2 = Transcriber(model_size=None, language=None, device=None, dll_dir=None)
+    assert t2.model_size == "small" and t2.device == "cpu" and t2.dll_dir == ""
+
+    # la clase auxiliar de CUDA es independiente y tiene su propia API
+    c = _CudaDlls("/no/existe", "")
+    assert callable(c.preflight)
+    assert not hasattr(Transcriber, "preflight"), "las clases se mezclaron"
+    assert not hasattr(_CudaDlls, "transcribe"), "las clases se mezclaron"
+
+    assert callable(Recorder().stop)
+
+
+def test_app_build_dictation_cablea_la_clase_real(monkeypatch):
+    """El wiring de DesktopApp debe construir un DictationController cuyo
+    transcribe apunte al Transcriber real."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "engine"))
+    from loudvox.config import Config
+    from loudvox_desktop.app import DesktopApp
+
+    app = DesktopApp.__new__(DesktopApp)
+    app.cfg = Config()
+    app._dictation = None
+    transcriber = app._build_dictation()
+    assert callable(transcriber.transcribe) and callable(transcriber.preload)
+    assert app._dictation is not None
+    # el controlador quedó conectado al método real
+    assert app._dictation._transcribe == transcriber.transcribe

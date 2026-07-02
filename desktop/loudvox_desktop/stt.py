@@ -46,30 +46,6 @@ class Recorder:
         return np.concatenate(self._chunks).flatten()
 
 
-class Transcriber:
-    """faster-whisper local, carga diferida (la primera vez tarda).
-
-    ``model_size`` acepta un nombre ("small", "large-v2"…) o una ruta a un
-    modelo faster-whisper ya descargado en tu disco.
-    """
-
-    def __init__(
-        self,
-        model_size: str = "small",
-        language: str = "es",
-        device: str = "cpu",
-        compute: str = "",
-        dll_dir: str = "",
-    ):
-        self.model_size = model_size
-        self.language = language
-        self.device = device
-        # automático: lo más liviano por dispositivo
-        self.compute = compute or ("int8_float16" if device == "cuda" else "int8")
-        self.dll_dir = dll_dir
-        self._model = None
-        self._lock = threading.Lock()
-
 # DLLs que ctranslate2 4.4 (CUDA 12 + cuDNN 8) carga sí o sí en GPU.
 # Si falta alguna, tocar la GPU produce un aborto NATIVO incapturable:
 # hay que verificar ANTES y caer a CPU.
@@ -146,6 +122,32 @@ class _CudaDlls:
                 pass
             os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
         return True, f"DLLs en {', '.join(dict.fromkeys(found.values()))}"
+
+
+class Transcriber:
+    """faster-whisper local, carga diferida (la primera vez tarda).
+
+    ``model_size`` acepta un nombre ("small", "large-v2"…) o una ruta a un
+    modelo faster-whisper ya descargado en tu disco.
+    """
+
+    def __init__(
+        self,
+        model_size: str = "small",
+        language: str = "es",
+        device: str = "cpu",
+        compute: str = "",
+        dll_dir: str = "",
+    ):
+        # `or` defensivo: config viejas pueden traer None en estos campos
+        self.model_size = str(model_size or "small")
+        self.language = language or "es"
+        self.device = device or "cpu"
+        # automático: lo más liviano por dispositivo
+        self.compute = compute or ("int8_float16" if self.device == "cuda" else "int8")
+        self.dll_dir = dll_dir or ""
+        self._model = None
+        self._lock = threading.Lock()
 
     def _load(self):
         if self._model is None:
