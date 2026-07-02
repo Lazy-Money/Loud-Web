@@ -43,6 +43,9 @@ $T = @{
     gpu_ok      = "GPU VERIFICADA: el dictado usara la placa de video."
     gpu_fail    = "La verificacion de GPU fallo: el dictado queda en CPU (funciona igual)."
     dl_model    = "Descargando el modelo de dictado..."
+    kokoro_hdr  = "Voz premium Kokoro (opcional)"
+    kokoro_ask  = "Instalar el motor Kokoro? Voces mas naturales, ~340 MB; algo mas lento que Piper. Sin aleman. [s/N]"
+    kokoro_done = "Kokoro instalado: elegilo en Configuracion -> Motor."
     shortcuts   = "Accesos directos"
     autostart   = "Iniciar LoudVox automaticamente con Windows? [S/n]"
     made        = "  creado:"
@@ -77,6 +80,9 @@ $T = @{
     gpu_ok      = "GPU VERIFIED: dictation will use the graphics card."
     gpu_fail    = "GPU verification failed: dictation stays on CPU (still works)."
     dl_model    = "Downloading the dictation model..."
+    kokoro_hdr  = "Kokoro premium voices (optional)"
+    kokoro_ask  = "Install the Kokoro engine? More natural voices, ~340 MB; a bit slower than Piper. No German. [y/N]"
+    kokoro_done = "Kokoro installed: pick it in Settings -> Engine."
     shortcuts   = "Shortcuts"
     autostart   = "Start LoudVox automatically with Windows? [Y/n]"
     made        = "  created:"
@@ -111,6 +117,9 @@ $T = @{
     gpu_ok      = "GPU VERIFICATA: la dettatura usera la scheda video."
     gpu_fail    = "Verifica GPU fallita: la dettatura resta su CPU (funziona comunque)."
     dl_model    = "Scaricamento del modello di dettatura..."
+    kokoro_hdr  = "Voci premium Kokoro (opzionale)"
+    kokoro_ask  = "Installare il motore Kokoro? Voci piu naturali, ~340 MB; un po piu lento di Piper. Niente tedesco. [s/N]"
+    kokoro_done = "Kokoro installato: sceglilo in Impostazioni -> Motore."
     shortcuts   = "Collegamenti"
     autostart   = "Avviare LoudVox automaticamente con Windows? [S/n]"
     made        = "  creato:"
@@ -145,6 +154,9 @@ $T = @{
     gpu_ok      = "GPU VERIFIZIERT: Diktat nutzt die Grafikkarte."
     gpu_fail    = "GPU-Pruefung fehlgeschlagen: Diktat bleibt auf CPU (funktioniert trotzdem)."
     dl_model    = "Diktatmodell wird geladen..."
+    kokoro_hdr  = "Kokoro-Premiumstimmen (optional)"
+    kokoro_ask  = "Kokoro-Engine installieren? Natuerlichere Stimmen, ~340 MB; etwas langsamer als Piper. Kein Deutsch. [j/N]"
+    kokoro_done = "Kokoro installiert: in Einstellungen -> Engine waehlen."
     shortcuts   = "Verknuepfungen"
     autostart   = "LoudVox automatisch mit Windows starten? [J/n]"
     made        = "  erstellt:"
@@ -296,6 +308,15 @@ try {
             Write-Host $M.dl_model
             python -c "import os; os.environ.setdefault('HF_HUB_DISABLE_SYMLINKS_WARNING','1'); from faster_whisper import WhisperModel; WhisperModel('$sttModel', device='cpu', compute_type='int8')"
         }
+    }
+
+    # --- 4b. Motor premium Kokoro (opcional) -----------------------------------
+    Titulo $M.kokoro_hdr
+    $k = Read-Host $M.kokoro_ask
+    if ($k -match "^$yes") {
+        python -m pip install --quiet "kokoro-onnx==0.5.0"
+        loudvox download kokoro
+        Write-Host $M.kokoro_done -ForegroundColor Green
     }
 
     # --- 5. Accesos directos ---------------------------------------------------
