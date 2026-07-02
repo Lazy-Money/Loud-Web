@@ -65,6 +65,14 @@ en `config.json`:
 
 Reiniciá `loudvox-desktop`. Tu voz, 100% local.
 
+## Destilar una voz Kokoro a Piper (sin grabar nada)
+
+Ver [destilar_kokoro_a_piper.ipynb](destilar_kokoro_a_piper.ipynb): notebook
+de Colab 100% automático — genera el dataset con una voz Kokoro (Dora/Alex/
+Santa) y entrena una voz Piper con ese timbre. Cero grabación, cero
+transcripción. `generar_dataset.py` hace lo mismo en tu PC si tenés Kokoro
+instalado localmente.
+
 ## Entrenar SIN internet (local, con tu GPU)
 
 Ver [ENTRENAR_LOCAL.md](ENTRENAR_LOCAL.md): mismo proceso corriendo en tu
