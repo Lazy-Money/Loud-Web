@@ -124,7 +124,14 @@ class DesktopApp:
         print(f"  {hk.read_from_here:>18}  leer portapapeles")
         print(f"  {hk.stop:>18}  detener")
         print("Ctrl+C en esta terminal para salir.")
+        # En Windows, un join() sin timeout no puede interrumpirse con Ctrl+C:
+        # se espera en intervalos cortos para que la señal llegue.
         try:
-            listener.join()
+            while listener.is_alive():
+                listener.join(0.5)
         except KeyboardInterrupt:
+            pass
+        finally:
+            self.player.stop()
+            listener.stop()
             print("\nHasta luego.")
