@@ -73,7 +73,7 @@ async function startReading(mode, tabId) {
     target: "offscreen",
     blocks,
     settings,
-    highlight: mode === "from-here",
+    highlight: mode !== "selection",
   });
 }
 
@@ -90,6 +90,49 @@ chrome.commands.onCommand.addListener((command) => {
   if (command === "read-selection") startReading("selection");
   else if (command === "read-from-here") startReading("from-here");
   else if (command === "stop-reading") stopReading();
+});
+
+// --- Menú de clic derecho (complementa a las hotkeys, no las reemplaza) ----
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: "lv-read-selection",
+    title: "🔊 Leer selección",
+    contexts: ["selection"],
+  });
+  chrome.contextMenus.create({
+    id: "lv-read-from-here",
+    title: "⏩ Leer desde aquí en adelante",
+    contexts: ["selection"],
+  });
+  chrome.contextMenus.create({
+    id: "lv-read-page",
+    title: "🔊 Leer esta página completa",
+    contexts: ["page"],
+  });
+  chrome.contextMenus.create({
+    id: "lv-stop",
+    title: "⏹ Detener lectura",
+    contexts: ["page", "selection"],
+  });
+  chrome.contextMenus.create({
+    id: "lv-open-pdf",
+    title: "📖 Abrir PDF con el lector LoudVox",
+    contexts: ["link"],
+    targetUrlPatterns: ["*://*/*.pdf*", "*://*/*.PDF*", "file:///*.pdf"],
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "lv-read-selection") startReading("selection", tab?.id);
+  else if (info.menuItemId === "lv-read-from-here") startReading("from-here", tab?.id);
+  else if (info.menuItemId === "lv-read-page") startReading("page", tab?.id);
+  else if (info.menuItemId === "lv-stop") stopReading();
+  else if (info.menuItemId === "lv-open-pdf" && info.linkUrl) {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL(`viewer.html?url=${encodeURIComponent(info.linkUrl)}`),
+    });
+  }
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

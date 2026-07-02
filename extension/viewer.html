@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Lector LoudVox</title>
+  <link rel="stylesheet" href="viewer.css" />
+  <link rel="stylesheet" href="content.css" />
+</head>
+<body>
+  <header id="toolbar">
+    <span id="brand">🔊 LoudVox</span>
+    <button id="open-file">📂 Abrir PDF…</button>
+    <button id="read-all">▶ Leer todo</button>
+    <button id="stop">⏹ Detener</button>
+    <span class="sep"></span>
+    <button id="font-minus" title="Letra más chica">A−</button>
+    <button id="font-plus" title="Letra más grande">A+</button>
+    <input type="file" id="file-input" accept=".pdf,application/pdf" hidden />
+  </header>
+
+  <main id="content">
+    <div id="placeholder">
+      <p>Abrí un PDF con el botón <strong>📂 Abrir PDF…</strong><br />
+      o arrastralo y soltalo en esta ventana.</p>
+      <p class="tip">Después: seleccioná dónde empezar y usá clic derecho →
+      <em>“Leer desde aquí”</em>, o el botón <em>▶ Leer todo</em>.</p>
+    </div>
+  </main>
+
+  <script src="content.js"></script>
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>

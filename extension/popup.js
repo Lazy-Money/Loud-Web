@@ -70,4 +70,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("stop").addEventListener("click", () => {
     sendToBackground({ type: "lv-stop" });
   });
+  $("open-pdf").addEventListener("click", () => {
+    // Si la pestaña actual ya es un PDF de internet, abrirlo directo
+    const url =
+      tab?.url && /^https?:.*\.pdf(\?|#|$)/i.test(tab.url)
+        ? `viewer.html?url=${encodeURIComponent(tab.url)}`
+        : "viewer.html";
+    chrome.tabs.create({ url: chrome.runtime.getURL(url) });
+    window.close();
+  });
 });

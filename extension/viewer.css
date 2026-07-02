@@ -1,0 +1,58 @@
+:root {
+  --font-size: 22px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  background: #faf8f4;
+  color: #1c1c1c;
+}
+#toolbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0dcd4;
+  font-family: system-ui, sans-serif;
+  z-index: 10;
+}
+#brand { font-weight: 700; margin-right: 8px; }
+.sep { flex: 1; }
+#toolbar button {
+  font-size: 15px;
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f6f6f6;
+  cursor: pointer;
+}
+#toolbar button:hover { background: #ececec; }
+#content {
+  max-width: 46em;
+  margin: 0 auto;
+  padding: 28px 24px 120px;
+  font-size: var(--font-size);
+  line-height: 1.65;
+}
+#content p { margin: 0 0 1em; }
+#content h2.page-mark {
+  font-family: system-ui, sans-serif;
+  font-size: 0.65em;
+  color: #999;
+  border-top: 1px dashed #ddd;
+  padding-top: 1em;
+  margin: 2em 0 1em;
+  font-weight: 500;
+}
+#placeholder {
+  text-align: center;
+  color: #666;
+  margin-top: 15vh;
+  font-size: 20px;
+}
+#placeholder .tip { font-size: 16px; color: #999; }
+body.dragover { outline: 4px dashed #ff8c00; outline-offset: -4px; }

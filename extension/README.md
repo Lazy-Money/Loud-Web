@@ -17,11 +17,35 @@ máquina: la extensión solo habla con `http://127.0.0.1:5089`.
 
 ## Uso
 
+**Con el mouse (clic derecho)** — pensado para no depender del teclado:
+
+| Menú | Acción |
+|---|---|
+| 🔊 Leer selección | Lee el texto marcado |
+| ⏩ Leer desde aquí en adelante | Lee desde la selección hasta el final |
+| 🔊 Leer esta página completa | Lee todo el artículo desde el principio |
+| ⏹ Detener lectura | Para |
+| 📖 Abrir PDF con el lector LoudVox | (clic derecho sobre un enlace a PDF) |
+
+**Con el teclado** (mismas acciones, para usuarios rápidos):
+
 | Atajo | Acción |
 |---|---|
 | `Ctrl+Shift+L` | Leer el texto seleccionado |
 | `Ctrl+Shift+Espacio` | Leer desde la selección en adelante (con resaltado y auto-scroll) |
 | `Ctrl+Shift+X` | Detener |
+
+## Lector de PDF integrado
+
+El visor de PDF nativo de Brave está vedado para extensiones, así que LoudVox
+trae su propio lector (basado en pdf.js de Mozilla, incluido en `vendor/`,
+sin conexión a internet):
+
+- **Abrir**: ícono de LoudVox → "📖 Abrir PDF con el lector" (elige el
+  archivo o arrastralo a la ventana), o clic derecho sobre un enlace a PDF.
+- Muestra el texto en página limpia, con letra grande ajustable (botones A− / A+).
+- Ahí adentro funcionan el clic derecho, las hotkeys, el resaltado y el
+  botón **▶ Leer todo**.
 
 **Personalizar atajos**: `brave://extensions/shortcuts` → asigná la
 combinación que quieras a cada acción (cualquier combinación de 2+ teclas
@@ -46,10 +70,10 @@ mismos tres botones para usar con el mouse.
   siguiente**: la lectura empieza rápido y no se corta entre párrafos.
 - Las abreviaturas se expanden en el motor ("10 km" → "diez kilómetros").
 
-## Limitaciones conocidas (se resuelven en fases siguientes)
+## Limitaciones conocidas
 
-- **PDFs en el navegador**: el visor de PDF de Brave no permite content
-  scripts. Los PDFs se leerán con el cliente de escritorio (Fase 3).
+- **PDFs escaneados** (imagen sin texto): el lector avisa; requerirá OCR
+  (fase futura).
 - **Google Docs**: usa renderizado especial (canvas); requiere integración
   propia, planificada más adelante.
 - Páginas internas (`brave://…`) no son accesibles por diseño del navegador.

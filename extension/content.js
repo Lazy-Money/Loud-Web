@@ -58,11 +58,11 @@
       return { blocks: [{ text }] }; // sin resaltado: es lo que el usuario marcó
     }
 
-    // mode === "from-here": todos los bloques desde la selección (o el
-    // principio de la página si no hay selección) hasta el final.
+    // "from-here": todos los bloques desde la selección hasta el final.
+    // "page": la página completa, ignorando cualquier selección.
     const blocks = leafBlocks(document.body);
     let startIdx = 0;
-    if (sel && sel.rangeCount > 0 && sel.anchorNode) {
+    if (mode === "from-here" && sel && sel.rangeCount > 0 && sel.anchorNode) {
       const anchor = sel.getRangeAt(0).startContainer;
       const anchorEl =
         anchor.nodeType === Node.ELEMENT_NODE ? anchor : anchor.parentElement;
