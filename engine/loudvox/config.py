@@ -82,6 +82,9 @@ class Config:
     # Cargar el modelo de dictado al iniciar la app (usa RAM desde el
     # arranque, pero el primer dictado responde al instante)
     stt_preload: bool = False
+    # Carpeta con las DLLs de CUDA (cublas/cudnn) si no están junto al
+    # modelo ni instaladas vía pip. Solo relevante con stt_device="cuda".
+    stt_dll_dir: str = ""
     # Idioma de los menús de la app (vacío = seguir a `language`)
     ui_language: str = ""
 

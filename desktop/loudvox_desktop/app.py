@@ -91,6 +91,7 @@ class DesktopApp:
             language=self.cfg.language,
             device=self.cfg.stt_device,
             compute=self.cfg.stt_compute,
+            dll_dir=self.cfg.stt_dll_dir,
         )
         self._dictation = DictationController(
             recorder=Recorder(),

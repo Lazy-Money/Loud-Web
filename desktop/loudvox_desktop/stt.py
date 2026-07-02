@@ -59,12 +59,14 @@ class Transcriber:
         language: str = "es",
         device: str = "cpu",
         compute: str = "",
+        dll_dir: str = "",
     ):
         self.model_size = model_size
         self.language = language
         self.device = device
         # automático: lo más liviano por dispositivo
         self.compute = compute or ("int8_float16" if device == "cuda" else "int8")
+        self.dll_dir = dll_dir
         self._model = None
         self._lock = threading.Lock()
 
@@ -89,6 +91,10 @@ class Transcriber:
                     os.add_dll_directory(d)
                 except OSError:
                     pass
+
+        # 0. Carpeta explícita del usuario (config: stt_dll_dir)
+        if self.dll_dir:
+            add(self.dll_dir)
 
         # 1. Junto al modelo (ruta local tipo Purfview). Su estructura es
         #    Purfview-Whisper-Faster\           <- acá viven cublas/cudnn
