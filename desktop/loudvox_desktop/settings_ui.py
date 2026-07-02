@@ -1,9 +1,8 @@
 """Ventana de configuración (tkinter: incluido con Python, sin dependencias).
 
-Se abre desde el menú de la bandeja. Estructura: Motor → Idioma → Voz
-(con región y género), deslizadores de velocidad/volumen/tono, botón
-"Probar voz". Guarda en config.json y aplica al instante (los atajos se
-aplican al reiniciar).
+Estructura: Motor → Idioma → Voz (región y género) + deslizadores + dictado
+(modelo, CPU/GPU, con reinicio) + atajos. El idioma del menú es elegible y
+por defecto sigue al idioma elegido en la instalación.
 """
 
 from __future__ import annotations
@@ -13,22 +12,17 @@ import threading
 from loudvox.catalog import list_catalog
 from loudvox.config import SUPPORTED_LANGUAGES, save
 
+from .i18n import strings_for
+
 _open_lock = threading.Lock()
 _is_open = False
 
 LANG_NAMES = {"es": "Español", "en": "English", "it": "Italiano", "de": "Deutsch"}
-ENGINE_LABELS = {"piper": "Piper (rápido)", "kokoro": "Kokoro (premium)"}
-
-SAMPLES = {
-    "es": "Hola, así voy a sonar cuando lea para vos.",
-    "en": "Hello, this is how I will sound when reading.",
-    "it": "Ciao, ecco come suonerò durante la lettura.",
-    "de": "Hallo, so werde ich beim Vorlesen klingen.",
-}
+ENGINE_LABELS = {"piper": "Piper", "kokoro": "Kokoro"}
+STT_MODELS = ["base", "small", "medium", "large-v3"]
 
 
 def open_settings(app) -> None:
-    """Abre la ventana (una sola a la vez), en su propio hilo con mainloop."""
     global _is_open
     with _open_lock:
         if _is_open:
@@ -50,6 +44,7 @@ def _window(app) -> None:
     from tkinter import ttk
 
     cfg = app.cfg
+    t = strings_for(cfg.resolved_ui_language())
     catalog = list_catalog(cfg.resolved_voices_dir())
     engines = sorted({e["engine"] for e in catalog}) or ["piper"]
 
@@ -58,8 +53,8 @@ def _window(app) -> None:
         catalog = list_catalog(cfg.resolved_voices_dir())
 
     root = tk.Tk()
-    root.title("LoudVox — Configuración")
-    root.geometry("480x620")
+    root.title(t["settings_title"])
+    root.geometry("600x780")
     root.attributes("-topmost", True)
 
     style = ttk.Style(root)
@@ -67,35 +62,64 @@ def _window(app) -> None:
     style.configure("TLabel", font=("Segoe UI", 12))
     style.configure("Header.TLabel", font=("Segoe UI", 13, "bold"))
 
-    frame = ttk.Frame(root, padding=16)
-    frame.pack(fill="both", expand=True)
+    outer = ttk.Frame(root, padding=16)
+    outer.pack(fill="both", expand=True)
+    frame = outer
+    r = 0
 
-    def row(r, text):
-        ttk.Label(frame, text=text).grid(row=r, column=0, sticky="w", pady=6)
+    def row(text):
+        nonlocal r
+        ttk.Label(frame, text=text).grid(row=r, column=0, sticky="w", pady=5)
 
-    # --- motor ---
-    row(0, "Motor")
-    engine_box = ttk.Combobox(
+    def nextrow():
+        nonlocal r
+        r += 1
+
+    status = None  # se define más abajo; funciones lo usan vía closure
+
+    # --- idioma del menú -----------------------------------------------------
+    row(t["menu_lang"])
+    ui_lang_box = ttk.Combobox(
         frame, state="readonly",
-        values=[ENGINE_LABELS.get(e, e) for e in engines],
+        values=[f"{LANG_NAMES[c]} ({c})" for c in SUPPORTED_LANGUAGES],
+    )
+    ui_lang_box.set(f"{LANG_NAMES[cfg.resolved_ui_language()]} ({cfg.resolved_ui_language()})")
+    ui_lang_box.grid(row=r, column=1, sticky="ew", pady=5)
+    nextrow()
+
+    def on_ui_lang(_e=None):
+        cfg.ui_language = ui_lang_box.get().rsplit("(", 1)[1].rstrip(")")
+        save(cfg)
+        root.destroy()
+        open_settings(app)  # reabrir traducida
+
+    ui_lang_box.bind("<<ComboboxSelected>>", on_ui_lang)
+
+    # --- motor ---------------------------------------------------------------
+    row(t["engine"])
+    engine_box = ttk.Combobox(
+        frame, state="readonly", values=[ENGINE_LABELS.get(e, e) for e in engines]
     )
     current_engine = cfg.engine if cfg.engine in engines else engines[0]
     engine_box.set(ENGINE_LABELS.get(current_engine, current_engine))
-    engine_box.grid(row=0, column=1, sticky="ew", pady=6)
+    engine_box.grid(row=r, column=1, sticky="ew", pady=5)
+    nextrow()
 
-    # --- idioma ---
-    row(1, "Idioma")
+    # --- idioma de lectura ----------------------------------------------------
+    row(t["language"])
     lang_box = ttk.Combobox(
         frame, state="readonly",
         values=[f"{LANG_NAMES[c]} ({c})" for c in SUPPORTED_LANGUAGES],
     )
     lang_box.set(f"{LANG_NAMES[cfg.language]} ({cfg.language})")
-    lang_box.grid(row=1, column=1, sticky="ew", pady=6)
+    lang_box.grid(row=r, column=1, sticky="ew", pady=5)
+    nextrow()
 
-    # --- voz (región + nombre + género, desde el catálogo) ---
-    row(2, "Voz")
+    # --- voz -------------------------------------------------------------------
+    row(t["voice"])
     voice_box = ttk.Combobox(frame, state="readonly")
-    voice_box.grid(row=2, column=1, sticky="ew", pady=6)
+    voice_box.grid(row=r, column=1, sticky="ew", pady=5)
+    nextrow()
     visible_entries: list[dict] = []
 
     def selected_engine() -> str:
@@ -114,7 +138,6 @@ def _window(app) -> None:
         visible_entries = [e for e in catalog if e["engine"] == eng and e["lang"] == lang]
         if visible_entries:
             voice_box["values"] = [e["label"] for e in visible_entries]
-            # preseleccionar la voz configurada si está en la lista
             current = [
                 e for e in visible_entries
                 if e["id"] == cfg.voice
@@ -123,37 +146,39 @@ def _window(app) -> None:
             ]
             voice_box.set(current[0]["label"] if current else visible_entries[0]["label"])
         else:
-            voice_box["values"] = ["(no hay voces de este motor/idioma instaladas)"]
+            voice_box["values"] = ["—"]
             voice_box.current(0)
 
     engine_box.bind("<<ComboboxSelected>>", sync_voices)
     lang_box.bind("<<ComboboxSelected>>", sync_voices)
     sync_voices()
 
-    # --- deslizadores ---
-    def slider(r, text, frm, to, value, fmt):
-        row(r, text)
+    # --- deslizadores ------------------------------------------------------------
+    def slider(text, frm, to, value, fmt):
+        nonlocal r
+        row(text)
         var = tk.DoubleVar(value=value)
         lbl = ttk.Label(frame, text=fmt(value))
         lbl.grid(row=r, column=2, padx=(8, 0))
-        s = ttk.Scale(
-            frame, from_=frm, to=to, variable=var,
-            command=lambda _v: lbl.config(text=fmt(var.get())),
-        )
-        s.grid(row=r, column=1, sticky="ew", pady=6)
+        s = ttk.Scale(frame, from_=frm, to=to, variable=var,
+                      command=lambda _v: lbl.config(text=fmt(var.get())))
+        s.grid(row=r, column=1, sticky="ew", pady=5)
+        nextrow()
         return var
 
-    speed_var = slider(3, "Velocidad", 0.5, 3.0, cfg.speed, lambda v: f"{v:.1f}×")
-    volume_var = slider(4, "Volumen", 0.1, 2.0, cfg.volume, lambda v: f"{int(v*100)}%")
+    speed_var = slider(t["speed"], 0.5, 3.0, cfg.speed, lambda v: f"{v:.1f}×")
+    volume_var = slider(t["volume"], 0.1, 2.0, cfg.volume, lambda v: f"{int(v*100)}%")
     pitch_var = slider(
-        5, "Tono", -6, 6, cfg.pitch,
-        lambda v: "normal" if abs(v) < 0.5 else (f"{v:+.0f} (grave)" if v < 0 else f"{v:+.0f} (agudo)"),
+        t["pitch"], -6, 6, cfg.pitch,
+        lambda v: t["normal"] if abs(v) < 0.5
+        else (f"{v:+.0f} ({t['low']})" if v < 0 else f"{v:+.0f} ({t['high']})"),
     )
 
-    status = ttk.Label(frame, text="", foreground="#666", wraplength=420)
-    status.grid(row=6, column=0, columnspan=3, sticky="w")
+    status = ttk.Label(frame, text="", foreground="#666", wraplength=540)
+    status.grid(row=r, column=0, columnspan=3, sticky="w")
+    nextrow()
 
-    def chosen_entry() -> dict | None:
+    def chosen_entry():
         label = voice_box.get()
         for e in visible_entries:
             if e["label"] == label:
@@ -163,10 +188,7 @@ def _window(app) -> None:
     def apply_to_cfg() -> bool:
         entry = chosen_entry()
         if entry is None:
-            status.config(
-                text="No hay voces para ese motor/idioma. Descargá con: "
-                     f"loudvox download {selected_lang()}"
-            )
+            status.config(text=t["no_voices"])
             return False
         cfg.engine = entry["engine"]
         cfg.language = selected_lang()
@@ -183,31 +205,21 @@ def _window(app) -> None:
     def probar():
         if not apply_to_cfg():
             return
-        status.config(text="Generando prueba…")
+        status.config(text=t["gen_test"])
 
         def go():
             try:
                 app.reload_runtime()
-                app._read(SAMPLES[cfg.language])
-                status.config(text="Reproduciendo.")
+                app._read(strings_for(cfg.language)["sample"])
+                status.config(text=t["playing"])
             except Exception as exc:
                 status.config(text=f"Error: {exc}")
 
         threading.Thread(target=go, daemon=True).start()
 
-    def guardar():
-        if not apply_to_cfg():
-            return
-        try:
-            save(cfg)
-            app.reload_runtime()
-            status.config(text="✔ Guardado y aplicado.")
-        except Exception as exc:
-            status.config(text=f"Error al guardar: {exc}")
-
     def descargar_idioma():
         lang = selected_lang()
-        status.config(text=f"⬇ Descargando voces de {LANG_NAMES[lang]}… (una vez)")
+        status.config(text=t["downloading"])
 
         def go():
             try:
@@ -217,39 +229,90 @@ def _window(app) -> None:
                 refresh_catalog()
                 app.reload_runtime()
                 root.after(0, sync_voices)
-                status.config(text=f"✔ Voces de {LANG_NAMES[lang]} instaladas.")
+                status.config(text=t["downloaded"])
             except Exception as exc:
-                status.config(text=f"Error al descargar: {exc}")
+                status.config(text=f"Error: {exc}")
 
         threading.Thread(target=go, daemon=True).start()
 
-    btns = ttk.Frame(frame)
-    btns.grid(row=7, column=0, columnspan=3, pady=14)
-    ttk.Button(btns, text="🔊 Probar voz", command=probar).pack(side="left", padx=6)
-    ttk.Button(btns, text="💾 Guardar", command=guardar).pack(side="left", padx=6)
-    ttk.Button(btns, text="⬇ Bajar voces del idioma", command=descargar_idioma).pack(
-        side="left", padx=6
+    # --- dictado -------------------------------------------------------------
+    ttk.Label(frame, text=t["stt_header"], style="Header.TLabel").grid(
+        row=r, column=0, columnspan=3, sticky="w", pady=(12, 4)
     )
-    ttk.Button(btns, text="Cerrar", command=root.destroy).pack(side="left", padx=6)
+    nextrow()
 
-    # --- atajos ---
-    ttk.Label(frame, text="Atajos de teclado", style="Header.TLabel").grid(
-        row=8, column=0, columnspan=3, sticky="w", pady=(12, 4)
+    row(t["stt_model"])
+    is_path = cfg.stt_model not in STT_MODELS
+    stt_box = ttk.Combobox(frame, state="readonly", values=STT_MODELS + [t["stt_custom"]])
+    stt_box.set(t["stt_custom"] if is_path else cfg.stt_model)
+    stt_box.grid(row=r, column=1, sticky="ew", pady=5)
+    nextrow()
+
+    stt_path_var = tk.StringVar(value=cfg.stt_model if is_path else "")
+    stt_path_entry = ttk.Entry(frame, textvariable=stt_path_var)
+    stt_path_entry.grid(row=r, column=1, sticky="ew", pady=3)
+    nextrow()
+
+    row(t["stt_device"])
+    device_box = ttk.Combobox(frame, state="readonly", values=["CPU", "GPU (CUDA)"])
+    device_box.set("GPU (CUDA)" if cfg.stt_device == "cuda" else "CPU")
+    device_box.grid(row=r, column=1, sticky="ew", pady=5)
+    nextrow()
+
+    restart_var = tk.BooleanVar(value=True)
+    ttk.Checkbutton(frame, text=t["restart_note"], variable=restart_var).grid(
+        row=r, column=0, columnspan=3, sticky="w", pady=3
     )
+    nextrow()
+
+    def stt_changed() -> bool:
+        model = stt_path_var.get().strip() if stt_box.get() == t["stt_custom"] else stt_box.get()
+        device = "cuda" if device_box.get().startswith("GPU") else "cpu"
+        changed = model != cfg.stt_model or device != cfg.stt_device
+        cfg.stt_model = model or cfg.stt_model
+        cfg.stt_device = device
+        return changed
+
+    def guardar():
+        if not apply_to_cfg():
+            return
+        need_restart = stt_changed()
+        try:
+            save(cfg)
+            app.reload_runtime()
+            status.config(text=t["saved"])
+            if need_restart and restart_var.get():
+                root.destroy()
+                app.restart()
+        except Exception as exc:
+            status.config(text=f"Error: {exc}")
+
+    btns = ttk.Frame(frame)
+    btns.grid(row=r, column=0, columnspan=3, pady=12)
+    nextrow()
+    ttk.Button(btns, text=t["test"], command=probar).pack(side="left", padx=5)
+    ttk.Button(btns, text=t["save"], command=guardar).pack(side="left", padx=5)
+    ttk.Button(btns, text=t["dl_lang"], command=descargar_idioma).pack(side="left", padx=5)
+    ttk.Button(btns, text=t["close"], command=root.destroy).pack(side="left", padx=5)
+
+    # --- atajos ----------------------------------------------------------------
+    ttk.Label(frame, text=t["hotkeys"], style="Header.TLabel").grid(
+        row=r, column=0, columnspan=3, sticky="w", pady=(10, 4)
+    )
+    nextrow()
     hk = cfg.hotkeys
     hk_vars = {}
-    for i, (attr, label) in enumerate(
-        [
-            ("read_selection", "Leer selección"),
-            ("read_from_here", "Leer portapapeles"),
-            ("dictate", "Dictar"),
-            ("stop", "Detener"),
-        ]
-    ):
-        row(9 + i, label)
+    for attr, label_key in [
+        ("read_selection", "hk_read"),
+        ("read_from_here", "hk_clip"),
+        ("dictate", "hk_dictate"),
+        ("stop", "hk_stop"),
+    ]:
+        row(t[label_key])
         var = tk.StringVar(value=getattr(hk, attr))
-        ttk.Entry(frame, textvariable=var).grid(row=9 + i, column=1, sticky="ew", pady=3)
+        ttk.Entry(frame, textvariable=var).grid(row=r, column=1, sticky="ew", pady=3)
         hk_vars[attr] = var
+        nextrow()
 
     def guardar_atajos():
         from loudvox.config import validate_hotkey
@@ -260,12 +323,12 @@ def _window(app) -> None:
             for attr, var in hk_vars.items():
                 setattr(hk, attr, var.get().strip().lower())
             save(cfg)
-            status.config(text="✔ Atajos guardados. Se aplican al reiniciar LoudVox.")
+            status.config(text=t["saved_hotkeys"])
         except ValueError as exc:
-            status.config(text=f"Atajo inválido: {exc}")
+            status.config(text=f"{t['invalid_hotkey']} {exc}")
 
-    ttk.Button(frame, text="Guardar atajos", command=guardar_atajos).grid(
-        row=13, column=1, sticky="w", pady=8
+    ttk.Button(frame, text=t["save_hotkeys"], command=guardar_atajos).grid(
+        row=r, column=1, sticky="w", pady=8
     )
 
     frame.columnconfigure(1, weight=1)

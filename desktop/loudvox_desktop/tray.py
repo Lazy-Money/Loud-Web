@@ -42,19 +42,22 @@ def run_tray(app, stop_event: threading.Event):
 
         open_ui(app)
 
+    from .i18n import strings_for
+
+    t = strings_for(app.cfg.resolved_ui_language())
     hk = app.cfg.hotkeys
     menu = pystray.Menu(
-        pystray.MenuItem("📋 Leer portapapeles", bg(app.read_clipboard)),
-        pystray.MenuItem("🎤 Dictar (empezar / terminar)", bg(app.toggle_dictation)),
-        pystray.MenuItem("⏹ Detener lectura", lambda: app.stop()),
-        pystray.MenuItem("⚙️ Configuración…", lambda: open_settings()),
+        pystray.MenuItem(t["tray_clip"], bg(app.read_clipboard)),
+        pystray.MenuItem(t["tray_dictate"], bg(app.toggle_dictation)),
+        pystray.MenuItem(t["tray_stop"], lambda: app.stop()),
+        pystray.MenuItem(t["tray_settings"], lambda: open_settings()),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem(f"Leer selección: {hk.read_selection}", None, enabled=False),
-        pystray.MenuItem(f"Dictar: {hk.dictate}", None, enabled=False),
-        pystray.MenuItem(f"Detener: {hk.stop}", None, enabled=False),
+        pystray.MenuItem(f"{t['hk_read']}: {hk.read_selection}", None, enabled=False),
+        pystray.MenuItem(f"{t['hk_dictate']}: {hk.dictate}", None, enabled=False),
+        pystray.MenuItem(f"{t['hk_stop']}: {hk.stop}", None, enabled=False),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Salir", do_exit),
+        pystray.MenuItem(t["tray_exit"], do_exit),
     )
-    icon = pystray.Icon("loudvox", _icon_image(), "LoudVox — lector local", menu)
+    icon = pystray.Icon("loudvox", _icon_image(), "LoudVox", menu)
     icon.run_detached()  # bucle del ícono en su propio hilo
     return icon

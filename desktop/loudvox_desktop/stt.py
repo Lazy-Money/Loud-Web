@@ -68,6 +68,29 @@ class Transcriber:
         self._model = None
         self._lock = threading.Lock()
 
+    @staticmethod
+    def _add_nvidia_dll_dirs() -> None:
+        """Si están los paquetes pip de NVIDIA (nvidia-cublas-cu12 /
+        nvidia-cudnn-cu12), registra sus carpetas de DLLs (solo Windows)."""
+        import os
+        import sys
+
+        if sys.platform != "win32":
+            return
+        try:
+            import nvidia  # noqa: F401
+        except ImportError:
+            return
+        base = os.path.dirname(nvidia.__file__)
+        for sub in os.listdir(base):
+            for leaf in ("bin", "lib"):
+                d = os.path.join(base, sub, leaf)
+                if os.path.isdir(d):
+                    try:
+                        os.add_dll_directory(d)
+                    except OSError:
+                        pass
+
     def _load(self):
         if self._model is None:
             import os
@@ -75,9 +98,26 @@ class Transcriber:
             os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
             from faster_whisper import WhisperModel
 
-            self._model = WhisperModel(
-                self.model_size, device=self.device, compute_type=self.compute
-            )
+            if self.device == "cuda":
+                self._add_nvidia_dll_dirs()
+            try:
+                self._model = WhisperModel(
+                    self.model_size, device=self.device, compute_type=self.compute
+                )
+            except Exception as exc:
+                if self.device != "cuda":
+                    raise
+                # GPU sin CUDA/cuDNN disponibles: caer a CPU en vez de romper.
+                print(
+                    f"[loudvox] GPU no disponible para el dictado ({exc}); "
+                    "usando CPU. Para GPU: pip install nvidia-cublas-cu12 "
+                    "nvidia-cudnn-cu12"
+                )
+                self.device = "cpu"
+                self.compute = "int8"
+                self._model = WhisperModel(
+                    self.model_size, device="cpu", compute_type="int8"
+                )
         return self._model
 
     def preload(self) -> None:
@@ -89,12 +129,27 @@ class Transcriber:
             return ""
         with self._lock:
             model = self._load()
-            segments, _info = model.transcribe(
-                audio,
-                language=self.language,
-                vad_filter=True,  # ignora silencios y respiraciones
-            )
-            return " ".join(s.text.strip() for s in segments).strip()
+            try:
+                segments, _info = model.transcribe(
+                    audio,
+                    language=self.language,
+                    vad_filter=True,  # ignora silencios y respiraciones
+                )
+                return " ".join(s.text.strip() for s in segments).strip()
+            except (RuntimeError, OSError) as exc:
+                if self.device != "cuda":
+                    raise
+                # cublas/cudnn ausentes recién se detectan al transcribir:
+                # recargar en CPU y reintentar una vez.
+                print(f"[loudvox] GPU falló al transcribir ({exc}); reintento en CPU")
+                self.device = "cpu"
+                self.compute = "int8"
+                self._model = None
+                model = self._load()
+                segments, _info = model.transcribe(
+                    audio, language=self.language, vad_filter=True
+                )
+                return " ".join(s.text.strip() for s in segments).strip()
 
 
 class DictationController:

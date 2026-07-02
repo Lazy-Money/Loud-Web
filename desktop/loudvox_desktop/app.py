@@ -43,6 +43,21 @@ class DesktopApp:
             except Exception:
                 pass
 
+    def restart(self) -> None:
+        """Relanza la app (nuevo proceso) y termina esta instancia."""
+        import os
+        import subprocess
+        import sys
+
+        flags = subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
+        exe = sys.executable
+        if sys.platform == "win32":
+            pythonw = os.path.join(os.path.dirname(exe), "pythonw.exe")
+            if os.path.exists(pythonw) and exe.endswith("pythonw.exe"):
+                exe = pythonw
+        subprocess.Popen([exe, "-m", "loudvox_desktop.cli"], creationflags=flags)
+        os._exit(0)
+
     def reload_runtime(self) -> None:
         """Aplica en caliente los campos de ``self.cfg`` que lo permiten.
 

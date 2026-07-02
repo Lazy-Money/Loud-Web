@@ -82,6 +82,12 @@ class Config:
     # Cargar el modelo de dictado al iniciar la app (usa RAM desde el
     # arranque, pero el primer dictado responde al instante)
     stt_preload: bool = False
+    # Idioma de los menús de la app (vacío = seguir a `language`)
+    ui_language: str = ""
+
+    def resolved_ui_language(self) -> str:
+        lang = self.ui_language or self.language
+        return lang if lang in SUPPORTED_LANGUAGES else "en"
     hotkeys: Hotkeys = field(default_factory=Hotkeys)
     # Ajustes por voz que pisan a los globales cuando esa voz está en uso:
     #   "voice_overrides": {
