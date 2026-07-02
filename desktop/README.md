@@ -27,9 +27,27 @@ globales:
 |---|---|
 | `Ctrl+Alt+R` | Leer el texto seleccionado (en cualquier app) |
 | `Ctrl+Alt+F` | Leer el contenido del portapapeles |
-| `Ctrl+Alt+S` | Detener |
+| `Ctrl+Alt+D` | **Dictar**: empezá a hablar; misma tecla para terminar |
+| `Ctrl+Alt+S` | Detener lectura |
 
 A diferencia del navegador, en el escritorio **sí se permite `Ctrl+Alt+…`**.
+
+**Bandeja del sistema**: la app deja un ícono naranja junto al reloj con
+menú de clic derecho: leer portapapeles, dictar, detener y **Salir** (la
+forma correcta de cerrarla).
+
+## Dictado por voz (100% local)
+
+1. Hacé clic en el campo donde querés escribir (mail, Word, buscador…)
+2. `Ctrl+Alt+D` → *bip agudo* → hablá
+3. `Ctrl+Alt+D` de nuevo → *bip* → en unos segundos aparece el texto escrito
+
+La transcripción usa Whisper (faster-whisper) **en tu CPU, sin internet**.
+La primera vez descarga el modelo (~500 MB para `small`); después, todo
+offline. En PCs muy modestas podés bajar a un modelo más liviano en
+`config.json`: `"stt_model": "base"` (~150 MB, algo menos preciso).
+
+Probar la transcripción con un audio: `loudvox-desktop stt grabacion.wav`
 
 **Personalizarlas**: editá el archivo de configuración (`loudvox config`
 muestra la ruta) — sección `hotkeys`, mínimo 2 teclas, sin restricciones:

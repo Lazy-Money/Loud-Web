@@ -19,6 +19,9 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--no-server", action="store_true", help="sin servidor HTTP")
     p_run.add_argument("--port", type=int, default=5089)
 
+    p_stt = sub.add_parser("stt", help="probar la transcripción con un WAV")
+    p_stt.add_argument("wav", help="archivo WAV a transcribir")
+
     p_file = sub.add_parser("file", help="leer un archivo pdf/txt/md")
     p_file.add_argument("path")
     p_file.add_argument("--desde", default="", help="empezar desde esta frase")
@@ -38,6 +41,26 @@ def main(argv: list[str] | None = None) -> int:
     except (FileNotFoundError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
+    if args.command == "stt":
+        import wave as wave_mod
+
+        import numpy as np
+
+        from loudvox_desktop.stt import Transcriber
+
+        with wave_mod.open(args.wav) as w:
+            rate = w.getframerate()
+            audio = np.frombuffer(
+                w.readframes(w.getnframes()), dtype=np.int16
+            ).astype(np.float32) / 32768.0
+        if rate != 16000:  # remuestreo lineal simple
+            idx = np.linspace(0, len(audio) - 1, int(len(audio) * 16000 / rate))
+            audio = np.interp(idx, np.arange(len(audio)), audio).astype(np.float32)
+        t = Transcriber(model_size=app.cfg.stt_model, language=app.cfg.language)
+        print("Transcribiendo (la primera vez descarga el modelo)…")
+        print(f"» {t.transcribe(audio)}")
+        return 0
 
     if args.command == "file":
         start = args.desde

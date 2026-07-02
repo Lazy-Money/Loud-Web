@@ -30,6 +30,41 @@ class DesktopApp:
         )
         self._normalizer = Normalizer.for_language(self.cfg.language)
         self.player = Player(self._synthesize)
+        self._dictation = None  # se arma en el primer uso (carga diferida)
+
+    def _beep(self, event: str) -> None:
+        """Señal sonora del dictado: aguda al empezar, grave al terminar."""
+        import sys
+
+        tones = {"start": 880, "stop": 550, "done": 660, "empty": 330, "error": 220}
+        if sys.platform == "win32":
+            import winsound
+
+            winsound.Beep(tones.get(event, 440), 120)
+        else:
+            print(f"[loudvox] dictado: {event}")
+
+    def toggle_dictation(self) -> None:
+        if self._dictation is None:
+            from .stt import DictationController, Recorder, Transcriber
+            from .writer import write_text
+
+            transcriber = Transcriber(
+                model_size=self.cfg.stt_model, language=self.cfg.language
+            )
+            self._dictation = DictationController(
+                recorder=Recorder(),
+                transcribe=transcriber.transcribe,
+                write=write_text,
+                feedback=self._beep,
+            )
+            print(
+                f"[loudvox] dictado listo (modelo {self.cfg.stt_model}; la primera "
+                "transcripción descarga el modelo y puede tardar)"
+            )
+        self._dictation.toggle()
+        state = "grabando… (misma tecla para terminar)" if self._dictation.recording else "procesando…"
+        print(f"[loudvox] dictado: {state}")
 
     def _synthesize(self, text: str) -> bytes:
         text = self._normalizer.normalize(text)
@@ -96,7 +131,7 @@ class DesktopApp:
         except FileNotFoundError as exc:
             print(f"[loudvox] AVISO: {exc}")
 
-    def run(self, with_server: bool = True, port: int = 5089) -> None:
+    def run(self, with_server: bool = True, port: int = 5089, tray: bool = True) -> None:
         from .hotkeys import listen
 
         threading.Thread(target=self._warmup, daemon=True).start()
@@ -117,12 +152,31 @@ class DesktopApp:
                     target=self.read_clipboard, daemon=True
                 ).start(),
                 hk.stop: self.stop,
+                hk.dictate: lambda: threading.Thread(
+                    target=self.toggle_dictation, daemon=True
+                ).start(),
             }
         )
         print("LoudVox Desktop activo. Hotkeys:")
         print(f"  {hk.read_selection:>18}  leer selección (en cualquier app)")
         print(f"  {hk.read_from_here:>18}  leer portapapeles")
+        print(f"  {hk.dictate:>18}  dictar (empezar / terminar)")
         print(f"  {hk.stop:>18}  detener")
+
+        if tray:
+            try:
+                from .tray import run_tray
+
+                print("Ícono en la bandeja del sistema (junto al reloj): "
+                      "clic derecho → Salir para cerrar.")
+                run_tray(self)  # bloquea hasta "Salir"
+                self.player.stop()
+                listener.stop()
+                print("Hasta luego.")
+                return
+            except Exception as exc:
+                print(f"[loudvox] bandeja no disponible ({exc}); modo consola.")
+
         print("Ctrl+C en esta terminal para salir.")
         # En Windows, un join() sin timeout no puede interrumpirse con Ctrl+C:
         # se espera en intervalos cortos para que la señal llegue.
