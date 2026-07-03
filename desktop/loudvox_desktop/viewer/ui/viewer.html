@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!-- UI del visor de documentos de LoudVox. Corre dentro de una ventana
+     pywebview; habla con Python vía window.pywebview.api (ver bridge.py).
+     Los textos visibles llegan traducidos desde Python (i18n.py). -->
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>LoudVox</title>
+  <link rel="stylesheet" href="viewer.css" />
+</head>
+<body>
+  <header id="toolbar">
+    <span id="brand">🔊 LoudVox</span>
+    <button id="open-file" data-i18n="vw_open">📂 Abrir…</button>
+    <button id="read-all" data-i18n="vw_read_all">▶ Leer todo</button>
+    <button id="read-here" data-i18n="vw_from_here">⏩ Desde aquí</button>
+    <button id="read-sel" data-i18n="vw_read_sel">🔊 Selección</button>
+    <button id="stop" data-i18n="vw_stop">⏹ Detener</button>
+    <span class="sep"></span>
+    <button id="font-minus" data-i18n-title="vw_font_minus" title="Letra más chica">A−</button>
+    <button id="font-plus" data-i18n-title="vw_font_plus" title="Letra más grande">A+</button>
+  </header>
+
+  <nav id="tabs" hidden></nav>
+
+  <main id="content">
+    <div id="welcome">
+      <p id="welcome-text" data-i18n="vw_welcome"></p>
+      <h2 id="recents-title" data-i18n="vw_recents"></h2>
+      <div id="recents"></div>
+    </div>
+    <article id="doc" hidden></article>
+  </main>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

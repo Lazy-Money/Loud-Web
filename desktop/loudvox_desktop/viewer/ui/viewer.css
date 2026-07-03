@@ -1,0 +1,175 @@
+/* Estilos del visor de documentos de LoudVox.
+   Base portada de extension/viewer.css; se agregan pestañas, recientes,
+   resaltado de lectura y tema oscuro automático. */
+
+:root {
+  --font-size: 22px;
+  --bg: #faf8f4;
+  --fg: #1c1c1c;
+  --toolbar-bg: #ffffff;
+  --border: #e0dcd4;
+  --btn-bg: #f6f6f6;
+  --btn-hover: #ececec;
+  --btn-border: #cccccc;
+  --muted: #666666;
+  --faint: #999999;
+  --tab-bg: #efece6;
+  --tab-active: #ffffff;
+  --accent: #ff8c00;
+  --reading-bg: rgba(255, 213, 79, 0.45);
+  --reading-outline: rgba(255, 179, 0, 0.9);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1e;
+    --fg: #e8e6e1;
+    --toolbar-bg: #2a2a2a;
+    --border: #3d3d3d;
+    --btn-bg: #333333;
+    --btn-hover: #404040;
+    --btn-border: #555555;
+    --muted: #aaaaaa;
+    --faint: #777777;
+    --tab-bg: #262626;
+    --tab-active: #383838;
+    --reading-bg: rgba(255, 179, 0, 0.28);
+    --reading-outline: rgba(255, 179, 0, 0.7);
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* --- barra de botones ----------------------------------------------------- */
+#toolbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--border);
+  font-family: system-ui, sans-serif;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+#brand { font-weight: 700; margin-right: 8px; }
+.sep { flex: 1; }
+#toolbar button {
+  font-size: 16px;
+  padding: 10px 16px;
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  background: var(--btn-bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+#toolbar button:hover { background: var(--btn-hover); }
+#toolbar button:focus-visible { outline: 3px solid var(--accent); }
+
+/* --- pestañas -------------------------------------------------------------- */
+#tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 10px 0;
+  background: var(--tab-bg);
+  border-bottom: 1px solid var(--border);
+  font-family: system-ui, sans-serif;
+  overflow-x: auto;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 8px 10px 8px 14px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: var(--tab-bg);
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.tab.active {
+  background: var(--tab-active);
+  font-weight: 600;
+}
+.tab .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tab .close {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.tab .close:hover { background: var(--btn-hover); color: var(--fg); }
+
+/* --- contenido ------------------------------------------------------------- */
+#content {
+  max-width: 46em;
+  margin: 0 auto;
+  padding: 28px 24px 120px;
+  font-size: var(--font-size);
+  line-height: 1.65;
+}
+#doc p { margin: 0 0 1em; border-radius: 3px; }
+#doc p.reading {
+  background: var(--reading-bg);
+  outline: 2px solid var(--reading-outline);
+  transition: background 0.2s ease;
+}
+.doc-error, .doc-empty {
+  color: var(--muted);
+  font-family: system-ui, sans-serif;
+  font-size: 19px;
+  margin-top: 10vh;
+  text-align: center;
+}
+
+/* --- pantalla de bienvenida / recientes ------------------------------------ */
+#welcome {
+  font-family: system-ui, sans-serif;
+  margin-top: 6vh;
+}
+#welcome-text {
+  color: var(--muted);
+  font-size: 20px;
+  text-align: center;
+}
+#recents-title {
+  font-size: 17px;
+  color: var(--faint);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-top: 8vh;
+}
+#recents { display: flex; flex-direction: column; gap: 6px; }
+.recent {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 17px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--btn-bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+.recent:hover { background: var(--btn-hover); }
+.recent .path { display: block; font-size: 13px; color: var(--faint); margin-top: 2px; }
+#no-recents { color: var(--faint); font-size: 16px; }
+
+body.dragover { outline: 4px dashed var(--accent); outline-offset: -4px; }

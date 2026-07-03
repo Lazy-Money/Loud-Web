@@ -42,6 +42,16 @@ def run_tray(app, stop_event: threading.Event):
 
         open_ui(app)
 
+    def open_viewer():
+        # Proceso aparte: pywebview necesita su propio hilo principal.
+        import subprocess
+        import sys
+
+        subprocess.Popen(
+            [sys.executable, "-m", "loudvox_desktop.viewer"],
+            start_new_session=True,
+        )
+
     from .i18n import strings_for
 
     t = strings_for(app.cfg.resolved_ui_language())
@@ -50,6 +60,7 @@ def run_tray(app, stop_event: threading.Event):
         pystray.MenuItem(t["tray_clip"], bg(app.read_clipboard)),
         pystray.MenuItem(t["tray_dictate"], bg(app.toggle_dictation)),
         pystray.MenuItem(t["tray_stop"], lambda: app.stop()),
+        pystray.MenuItem(t["tray_viewer"], lambda: open_viewer()),
         pystray.MenuItem(t["tray_settings"], lambda: open_settings()),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(f"{t['hk_read']}: {hk.read_selection}", None, enabled=False),

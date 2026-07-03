@@ -23,6 +23,8 @@ dependencies = [
     # mismo set de DLLs que traen las builds de Purfview/Subtitle Edit,
     # permitiendo reutilizarlas para GPU sin descargar nada.
     "ctranslate2==4.4.0",
+    # Visor de documentos (ventana nativa que envuelve HTML/JS local)
+    "pywebview==6.2.1",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +32,10 @@ dev = ["pytest==8.4.2"]
 
 [project.scripts]
 loudvox-desktop = "loudvox_desktop.cli:main"
+loudvox-viewer = "loudvox_desktop.viewer.app:main"
 
 [tool.setuptools.packages.find]
 include = ["loudvox_desktop*"]
+
+[tool.setuptools.package-data]
+"loudvox_desktop.viewer" = ["ui/*"]
