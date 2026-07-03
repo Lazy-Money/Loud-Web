@@ -49,6 +49,10 @@ $T = @{
     shortcuts   = "Accesos directos"
     autostart   = "Iniciar LoudVox automaticamente con Windows? [S/n]"
     made        = "  creado:"
+    assoc_hdr   = "Abrir documentos con LoudVox (opcional)"
+    assoc_ask   = "Agregar LoudVox al menu 'Abrir con' de .pdf .txt .md .djvu? No cambia tu app por defecto y es reversible. [s/N]"
+    assoc_done  = "Listo: LoudVox aparece en 'Abrir con' para esos archivos."
+    assoc_note  = "Para que sea la app por defecto: clic derecho en un archivo -> Abrir con -> Elegir otra aplicacion -> LoudVox Viewer -> marcar 'Siempre'. Para revertir: docs/VISOR.md (solo borra 2 claves del registro de TU usuario)."
     summary     = "Resumen"
     done        = "Listo! LoudVox instalado. Inicialo desde el Menu Inicio; vas a ver el icono naranja junto al reloj. Extension de Brave: brave://extensions -> Modo desarrollador -> Cargar sin empaquetar -> carpeta 'extension'."
     err         = "ERROR - la instalacion no se completo:"
@@ -86,6 +90,10 @@ $T = @{
     shortcuts   = "Shortcuts"
     autostart   = "Start LoudVox automatically with Windows? [Y/n]"
     made        = "  created:"
+    assoc_hdr   = "Open documents with LoudVox (optional)"
+    assoc_ask   = "Add LoudVox to the 'Open with' menu of .pdf .txt .md .djvu? It does not change your default app and is reversible. [y/N]"
+    assoc_done  = "Done: LoudVox now appears under 'Open with' for those files."
+    assoc_note  = "To make it the default: right-click a file -> Open with -> Choose another app -> LoudVox Viewer -> check 'Always'. To undo: see docs/VISOR.md (removes 2 registry keys of YOUR user only)."
     summary     = "Summary"
     done        = "Done! LoudVox installed. Launch it from the Start Menu; look for the orange icon by the clock. Brave extension: brave://extensions -> Developer mode -> Load unpacked -> 'extension' folder."
     err         = "ERROR - installation did not finish:"
@@ -123,6 +131,10 @@ $T = @{
     shortcuts   = "Collegamenti"
     autostart   = "Avviare LoudVox automaticamente con Windows? [S/n]"
     made        = "  creato:"
+    assoc_hdr   = "Aprire i documenti con LoudVox (opzionale)"
+    assoc_ask   = "Aggiungere LoudVox al menu 'Apri con' di .pdf .txt .md .djvu? Non cambia l'app predefinita ed e reversibile. [s/N]"
+    assoc_done  = "Fatto: LoudVox appare in 'Apri con' per quei file."
+    assoc_note  = "Per renderla predefinita: clic destro su un file -> Apri con -> Scegli un'altra app -> LoudVox Viewer -> 'Sempre'. Per annullare: docs/VISOR.md (rimuove solo 2 chiavi di registro del TUO utente)."
     summary     = "Riepilogo"
     done        = "Fatto! LoudVox installato. Avvialo dal Menu Start; icona arancione accanto all'orologio. Estensione Brave: brave://extensions -> Modalita sviluppatore -> Carica non pacchettizzata -> cartella 'extension'."
     err         = "ERRORE - installazione non completata:"
@@ -160,6 +172,10 @@ $T = @{
     shortcuts   = "Verknuepfungen"
     autostart   = "LoudVox automatisch mit Windows starten? [J/n]"
     made        = "  erstellt:"
+    assoc_hdr   = "Dokumente mit LoudVox oeffnen (optional)"
+    assoc_ask   = "LoudVox zum 'Oeffnen mit'-Menue von .pdf .txt .md .djvu hinzufuegen? Aendert nicht die Standard-App und ist umkehrbar. [j/N]"
+    assoc_done  = "Fertig: LoudVox erscheint bei 'Oeffnen mit' fuer diese Dateien."
+    assoc_note  = "Als Standard festlegen: Rechtsklick auf eine Datei -> Oeffnen mit -> Andere App auswaehlen -> LoudVox Viewer -> 'Immer'. Rueckgaengig: docs/VISOR.md (entfernt nur 2 Registry-Schluessel DEINES Benutzers)."
     summary     = "Zusammenfassung"
     done        = "Fertig! LoudVox installiert. Start ueber das Startmenue; orangefarbenes Symbol neben der Uhr. Brave-Erweiterung: brave://extensions -> Entwicklermodus -> Entpackt laden -> Ordner 'extension'."
     err         = "FEHLER - Installation nicht abgeschlossen:"
@@ -337,6 +353,29 @@ try {
     if ($auto -notmatch "^[nN]") {
         $startup = [Environment]::GetFolderPath('Startup')
         Crear-Acceso "$startup\LoudVox.lnk" "-m loudvox_desktop.cli" "Autostart"
+    }
+    Crear-Acceso "$menuDir\LoudVox Viewer.lnk" "-m loudvox_desktop.viewer" "LoudVox Viewer (Menu)"
+
+    # --- 5b. Asociacion de archivos (opcional, por usuario, reversible) --------
+    # Solo agrega LoudVox al menu "Abrir con" (OpenWithProgids en HKCU): no
+    # pisa la app por defecto del usuario (Windows 10+ ademas no permite
+    # cambiarla por script). Revertir = borrar las claves; ver docs/VISOR.md.
+    Titulo $M.assoc_hdr
+    $a = Read-Host $M.assoc_ask
+    if ($a -match "^$yes") {
+        $progid = "LoudVox.Viewer"
+        $clases = "HKCU:\Software\Classes"
+        New-Item -Path "$clases\$progid\shell\open\command" -Force | Out-Null
+        Set-ItemProperty -Path "$clases\$progid" -Name "(default)" -Value "LoudVox Viewer"
+        Set-ItemProperty -Path "$clases\$progid\shell\open\command" -Name "(default)" `
+            -Value "`"$pythonw`" -m loudvox_desktop.viewer `"%1`""
+        foreach ($ext in @(".pdf", ".txt", ".md", ".djvu")) {
+            $k = "$clases\$ext\OpenWithProgids"
+            New-Item -Path $k -Force | Out-Null
+            New-ItemProperty -Path $k -Name $progid -PropertyType String -Value "" -Force | Out-Null
+        }
+        Write-Host $M.assoc_done -ForegroundColor Green
+        Write-Host $M.assoc_note
     }
 
     # --- 6. Resumen ----------------------------------------------------------------

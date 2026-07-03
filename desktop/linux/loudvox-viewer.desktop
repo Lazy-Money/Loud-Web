@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=LoudVox Viewer
+Name[es]=Visor LoudVox
+Comment=Document reader with text-to-speech (PDF, TXT, MD, DJVU)
+Comment[es]=Lector de documentos con voz (PDF, TXT, MD, DJVU)
+Comment[it]=Lettore di documenti con sintesi vocale (PDF, TXT, MD, DJVU)
+Comment[de]=Dokumentleser mit Sprachausgabe (PDF, TXT, MD, DJVU)
+Exec=loudvox-viewer %f
+Terminal=false
+Categories=Office;Viewer;Accessibility;
+MimeType=application/pdf;text/plain;text/markdown;image/vnd.djvu;

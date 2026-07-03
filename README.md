@@ -48,6 +48,7 @@ Readvox/     Material de referencia (snapshot de readvox.com).
 | 5 | Tono de voz (grave/agudo), motor Kokoro opcional | ✅ |
 | 5b | Clonación de voz: entrenamiento en Colab gratuito → voz local `.onnx` | 🧪 beta |
 | 6 | Instalador: modelos incluidos, checkbox dictado (peso declarado), CPU/GPU, inicio con Windows | ⏳ |
+| 7 | Visor de documentos: PDF/TXT/MD/DJVU, pestañas, recientes, lectura con resaltado — [docs/VISOR.md](docs/VISOR.md) | ✅ |
 
 ## Empezar
 
