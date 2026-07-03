@@ -89,6 +89,37 @@ rm ~/.local/share/applications/loudvox-viewer.desktop
 xdg-mime default org.gnome.Evince.desktop application/pdf   # ejemplo
 ```
 
+## Empaquetar como .exe (Windows)
+
+Además de la instalación desde el código con `instalar.ps1`, podés generar
+ejecutables `.exe` con PyInstaller. Desde la raíz del repo, en Windows:
+
+```powershell
+.\empaquetar.ps1
+```
+
+Genera una carpeta **portable** `dist\LoudVox\` con:
+
+- `LoudVox.exe` — cliente principal (bandeja, hotkeys, dictado).
+- `LoudVox Viewer.exe` — el visor de documentos.
+
+Ambos comparten un único `_internal\` (las dependencias), cada uno con su
+ícono. Podés mover esa carpeta a donde quieras y crear accesos directos a los
+`.exe`; para el doble clic en documentos, asociá los tipos como se explica
+arriba (apuntando al `LoudVox Viewer.exe`).
+
+Notas honestas:
+
+- **El `.exe` solo se compila en Windows.** PyInstaller no genera binarios de
+  Windows desde Linux/Mac. El *spec* (`desktop/packaging/loudvox.spec`) se
+  validó compilando el visor en Linux (imports, datos de espeak-ng, UI e
+  íconos quedan incluidos), pero el ejecutable de Windows y su ventana solo se
+  confirman en Windows.
+- La ventana del visor usa el runtime **Edge WebView2**, que Windows 10/11 ya
+  trae; si faltara, se instala solo desde Microsoft.
+- `instalar.ps1` sigue disponible como alternativa transparente: instala el
+  código fuente para quien quiera auditar exactamente qué corre.
+
 ## Para desarrolladores
 
 - UI en `desktop/loudvox_desktop/viewer/ui/` (HTML/JS/CSS sin frameworks).
