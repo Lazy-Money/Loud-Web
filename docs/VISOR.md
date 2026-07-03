@@ -108,6 +108,9 @@ Ambos comparten un único `_internal\` (las dependencias), cada uno con su
 `.exe`; para el doble clic en documentos, asociá los tipos como se explica
 arriba (apuntando al `LoudVox Viewer.exe`).
 
+Para un **instalador de un clic** (`LoudVox-Setup.exe`) que otra persona abre con
+doble clic —sin PowerShell ni Python—, ver **[docs/INSTALADOR_EXE.md](INSTALADOR_EXE.md)**.
+
 Notas honestas:
 
 - **El `.exe` solo se compila en Windows.** PyInstaller no genera binarios de

@@ -14,3 +14,7 @@ dist/
 
 # Audio generado en pruebas
 *.wav
+
+# Inno Setup (salida del instalador y voces staged)
+/instalador/Output/
+/instalador/_voces/
