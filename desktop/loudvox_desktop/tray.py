@@ -8,17 +8,7 @@ from __future__ import annotations
 
 import threading
 
-
-def _icon_image():
-    """Botón play naranja, dibujado al vuelo (sin archivos de assets)."""
-    from PIL import Image, ImageDraw
-
-    size = 64
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle([2, 2, size - 2, size - 2], radius=12, fill=(255, 140, 0, 255))
-    d.polygon([(24, 18), (24, 46), (48, 32)], fill=(255, 255, 255, 255))
-    return img
+from .assets import icon_image, set_app_id
 
 
 def run_tray(app, stop_event: threading.Event):
@@ -28,6 +18,9 @@ def run_tray(app, stop_event: threading.Event):
     esperar de forma interrumpible (así Ctrl+C también funciona).
     """
     import pystray
+
+    # Que la barra de tareas muestre "LoudVox" y su icono, no "Python".
+    set_app_id("LoudVox.Desktop")
 
     def bg(fn):
         return lambda: threading.Thread(target=fn, daemon=True).start()
@@ -46,11 +39,15 @@ def run_tray(app, stop_event: threading.Event):
         # Proceso aparte: pywebview necesita su propio hilo principal.
         import subprocess
         import sys
+        from pathlib import Path
 
-        subprocess.Popen(
-            [sys.executable, "-m", "loudvox_desktop.viewer"],
-            start_new_session=True,
-        )
+        if getattr(sys, "frozen", False):
+            # Empaquetado: lanzar el .exe hermano del visor.
+            exe = Path(sys.executable).with_name("LoudVox Viewer.exe")
+            cmd = [str(exe)]
+        else:
+            cmd = [sys.executable, "-m", "loudvox_desktop.viewer"]
+        subprocess.Popen(cmd, start_new_session=True)
 
     from .i18n import strings_for
 
@@ -69,6 +66,6 @@ def run_tray(app, stop_event: threading.Event):
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(t["tray_exit"], do_exit),
     )
-    icon = pystray.Icon("loudvox", _icon_image(), "LoudVox", menu)
+    icon = pystray.Icon("loudvox", icon_image("loudvox"), "LoudVox", menu)
     icon.run_detached()  # bucle del ícono en su propio hilo
     return icon

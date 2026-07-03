@@ -42,7 +42,11 @@ def run(initial_path: str | None = None) -> None:
 
     from loudvox.config import load as load_config
 
+    from ..assets import icon_path, set_app_id
     from ..i18n import strings_for
+
+    # Barra de tareas: identidad propia del visor (no "Python").
+    set_app_id("LoudVox.Viewer")
 
     api = ViewerApi(initial_path=initial_path)
     title = strings_for(load_config().resolved_ui_language())["vw_title"]
@@ -55,7 +59,14 @@ def run(initial_path: str | None = None) -> None:
         min_size=(720, 480),
     )
     api.set_window(window)
+    # El icono de la ventana/barra: pywebview lo toma del parámetro de start()
+    # en GTK/Qt; en Windows (EdgeChromium) lo hereda del .exe empaquetado.
+    ico = icon_path("loudvox_viewer")
+    start_kwargs = {"icon": str(ico)} if ico.exists() else {}
     try:
+        webview.start(_bind_drop, window, **start_kwargs)
+    except TypeError:
+        # Backends que no aceptan icon= en start(): seguir sin icono.
         webview.start(_bind_drop, window)
     finally:
         api.stop()  # que no quede audio sonando al cerrar la ventana

@@ -39,3 +39,4 @@ include = ["loudvox_desktop*"]
 
 [tool.setuptools.package-data]
 "loudvox_desktop.viewer" = ["ui/*"]
+"loudvox_desktop.assets" = ["*.ico", "*.png"]
