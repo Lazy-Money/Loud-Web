@@ -74,6 +74,8 @@ body {
 #toolbar button:focus-visible { outline: 3px solid var(--accent); }
 
 /* --- pestañas -------------------------------------------------------------- */
+/* display:flex pisa al display:none del atributo [hidden]: restaurarlo */
+#tabs[hidden] { display: none; }
 #tabs {
   display: flex;
   gap: 2px;
