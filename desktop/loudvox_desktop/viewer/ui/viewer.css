@@ -173,5 +173,17 @@ body {
 .recent:hover { background: var(--btn-hover); }
 .recent .path { display: block; font-size: 13px; color: var(--faint); margin-top: 2px; }
 #no-recents { color: var(--faint); font-size: 16px; }
+#clear-recents {
+  margin-top: 12px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+#clear-recents:hover { background: var(--btn-hover); color: var(--fg); }
+#clear-recents[hidden] { display: none; }
 
 body.dragover { outline: 4px dashed var(--accent); outline-offset: -4px; }

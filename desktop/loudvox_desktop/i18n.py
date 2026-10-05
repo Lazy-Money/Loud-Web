@@ -61,6 +61,8 @@ STRINGS = {
         "vw_error_open": "No se pudo abrir el archivo:",
         "vw_close_tab": "Cerrar pestaña",
         "vw_loading": "Cargando…",
+        "vw_clear_recents": "🗑 Borrar recientes",
+        "remember_recents": "Recordar los últimos documentos abiertos en el visor",
     },
     "en": {
         "settings_title": "LoudVox — Settings",
@@ -120,6 +122,8 @@ STRINGS = {
         "vw_error_open": "Could not open the file:",
         "vw_close_tab": "Close tab",
         "vw_loading": "Loading…",
+        "vw_clear_recents": "🗑 Clear recents",
+        "remember_recents": "Remember recently opened documents in the viewer",
     },
     "it": {
         "settings_title": "LoudVox — Impostazioni",
@@ -179,6 +183,8 @@ STRINGS = {
         "vw_error_open": "Impossibile aprire il file:",
         "vw_close_tab": "Chiudi scheda",
         "vw_loading": "Caricamento…",
+        "vw_clear_recents": "🗑 Cancella recenti",
+        "remember_recents": "Ricorda gli ultimi documenti aperti nel lettore",
     },
     "de": {
         "settings_title": "LoudVox — Einstellungen",
@@ -238,6 +244,8 @@ STRINGS = {
         "vw_error_open": "Datei konnte nicht geöffnet werden:",
         "vw_close_tab": "Tab schließen",
         "vw_loading": "Wird geladen…",
+        "vw_clear_recents": "🗑 Verlauf löschen",
+        "remember_recents": "Zuletzt geöffnete Dokumente in der Leseansicht merken",
     },
 }
 

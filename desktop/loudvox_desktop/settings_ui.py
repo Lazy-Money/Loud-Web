@@ -267,6 +267,13 @@ def _window(app) -> None:
     )
     nextrow()
 
+    # Privacidad: historial de documentos abiertos en el visor
+    recents_var = tk.BooleanVar(value=cfg.remember_recents)
+    ttk.Checkbutton(frame, text=t["remember_recents"], variable=recents_var).grid(
+        row=r, column=0, columnspan=3, sticky="w", pady=3
+    )
+    nextrow()
+
     def stt_changed() -> bool:
         model = stt_path_var.get().strip() if stt_box.get() == t["stt_custom"] else stt_box.get()
         device = "cuda" if device_box.get().startswith("GPU") else "cpu"
@@ -278,6 +285,11 @@ def _window(app) -> None:
     def guardar():
         if not apply_to_cfg():
             return
+        cfg.remember_recents = bool(recents_var.get())
+        if not cfg.remember_recents:
+            from .viewer import recents as _recents
+
+            _recents.clear()  # al desactivar, se borra el historial existente
         need_restart = stt_changed()
         try:
             save(cfg)

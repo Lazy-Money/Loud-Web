@@ -160,6 +160,7 @@ function render() {
 function renderRecents(items) {
   const box = $("recents");
   box.innerHTML = "";
+  $("clear-recents").hidden = !(items && items.length);
   if (!items || !items.length) {
     const p = document.createElement("p");
     p.id = "no-recents";
@@ -304,6 +305,12 @@ async function boot() {
 
 function wireUi() {
   $("open-file").addEventListener("click", openDialog);
+  // Privacidad: borrar el historial de documentos abiertos
+  $("clear-recents").addEventListener("click", async () => {
+    const a = api();
+    if (a) await a.clear_recents();
+    renderRecents([]);
+  });
   $("read-all").addEventListener("click", () => {
     window.getSelection()?.removeAllRanges();
     readFrom(0);

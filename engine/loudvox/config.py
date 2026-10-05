@@ -87,6 +87,9 @@ class Config:
     stt_dll_dir: str = ""
     # Idioma de los menús de la app (vacío = seguir a `language`)
     ui_language: str = ""
+    # Privacidad: el visor recuerda los últimos documentos abiertos (ruta y
+    # nombre) en recent.json. En False no guarda nada y borra la lista.
+    remember_recents: bool = True
 
     def resolved_ui_language(self) -> str:
         lang = self.ui_language or self.language

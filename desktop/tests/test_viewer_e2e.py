@@ -85,7 +85,8 @@ window.__lvTestApi = {
   async read_document(p, i) { this.calls.push(['read_document', p, i]); return {ok: true}; },
   async read_text(t) { this.calls.push(['read_text', t]); return {ok: true}; },
   async stop() { this.calls.push(['stop']); return {ok: true}; },
-  async get_recents() { return [{path: '/a.txt', title: 'a.txt'}]; },
+  async get_recents() { return this.cleared ? [] : [{path: '/a.txt', title: 'a.txt'}]; },
+  async clear_recents() { this.calls.push(['clear_recents']); this.cleared = true; return []; },
 };
 """
 
@@ -222,6 +223,16 @@ def test_leer_seleccion_manda_el_texto(page):
     page.click("#read-sel")
     page.wait_for_timeout(100)
     assert ["read_text", "Segundo párrafo."] in calls(page)
+
+
+def test_borrar_recientes_limpia_la_lista(page):
+    # con recientes, el botón se ve; al apretarlo llama a la API y vacía la lista
+    assert page.is_visible("#clear-recents")
+    page.click("#clear-recents")
+    page.wait_for_timeout(100)
+    assert ["clear_recents"] in calls(page)
+    assert page.locator(".recent").count() == 0
+    assert page.is_hidden("#clear-recents")
 
 
 def test_botones_de_letra(page):

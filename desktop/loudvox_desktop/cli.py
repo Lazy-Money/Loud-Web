@@ -18,9 +18,12 @@ def _setup_headless_io() -> None:
         return
     from loudvox.config import data_dir
 
+    # Privacidad: acá va SOLO diagnóstico (estado/errores), nunca el texto
+    # leído ni dictado. Modo "w": el log se reinicia en cada arranque, así no
+    # acumula historial de uso.
     log_path = data_dir() / "loudvox.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log = open(log_path, "a", encoding="utf-8", buffering=1)
+    log = open(log_path, "w", encoding="utf-8", buffering=1)
     if sys.stdout is None:
         sys.stdout = log
     if sys.stderr is None:

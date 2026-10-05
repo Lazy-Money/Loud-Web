@@ -12,8 +12,31 @@ import io
 import queue
 import subprocess
 import sys
+import tempfile
 import threading
+import uuid
 import wave
+from pathlib import Path
+
+# Carpeta propia para los .wav temporales de reproducción (Windows). Tenerlos
+# juntos permite barrer restos de sesiones anteriores al arrancar.
+_TMP_DIR = Path(tempfile.gettempdir()) / "loudvox"
+
+
+def _sweep_temp() -> None:
+    """Borra .wav temporales que hayan quedado de un cierre abrupto.
+
+    Privacidad: el audio de lo leído nunca debe quedar en disco. Cada
+    reproducción borra su archivo al terminar; esto cubre el caso de crash.
+    """
+    try:
+        for f in _TMP_DIR.glob("*.wav"):
+            try:
+                f.unlink()
+            except OSError:
+                pass
+    except OSError:
+        pass
 
 
 def wav_duration(wav: bytes) -> float:
@@ -33,22 +56,21 @@ class AudioSink:
     def __init__(self):
         self._proc: subprocess.Popen | None = None
         self._stopped = threading.Event()
+        _sweep_temp()  # restos de una sesión anterior que haya crasheado
 
     def play(self, wav: bytes) -> None:
         self._stopped.clear()
         if sys.platform == "win32":
-            import os
-            import tempfile
             import winsound
 
             # winsound NO permite SND_MEMORY + SND_ASYNC (RuntimeError), así
             # que se pasa por un archivo temporal: async desde archivo sí vale.
-            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            _TMP_DIR.mkdir(parents=True, exist_ok=True)
+            tmp_path = _TMP_DIR / f"lv_{uuid.uuid4().hex}.wav"
             try:
-                tmp.write(wav)
-                tmp.close()
+                tmp_path.write_bytes(wav)
                 winsound.PlaySound(
-                    tmp.name,
+                    str(tmp_path),
                     winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT,
                 )
                 interrupted = self._stopped.wait(wav_duration(wav) + 0.05)
@@ -56,9 +78,9 @@ class AudioSink:
                     winsound.PlaySound(None, winsound.SND_PURGE)
             finally:
                 try:
-                    os.unlink(tmp.name)
+                    tmp_path.unlink()
                 except OSError:
-                    pass  # si el sistema aún lo retiene, queda en %TEMP%
+                    pass  # si Windows aún lo retiene, lo barre el próximo arranque
         else:
             self._proc = subprocess.Popen(
                 ["aplay", "-q", "-"],

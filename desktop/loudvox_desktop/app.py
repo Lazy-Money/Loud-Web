@@ -190,7 +190,8 @@ class DesktopApp:
         total = len(chunks)
         print(f"[loudvox] leyendo {total} fragmento(s)…")
         self.player.play_text_chunks(
-            chunks, on_chunk=lambda i, c: print(f"  ▶ {i + 1}/{total}: {c[:60]}…")
+            # Solo el progreso, nunca el texto: esto termina en el log.
+            chunks, on_chunk=lambda i, c: print(f"  ▶ {i + 1}/{total}")
         )
 
     def stop(self) -> None:

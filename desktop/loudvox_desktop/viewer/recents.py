@@ -48,3 +48,12 @@ def add(path: str, title: str) -> list[dict]:
 def existing() -> list[dict]:
     """Solo los recientes cuyos archivos siguen existiendo en disco."""
     return [d for d in load() if Path(d["path"]).exists()]
+
+
+def clear() -> None:
+    """Borra la lista de recientes del disco (privacidad)."""
+    with _lock:
+        try:
+            _path().unlink()
+        except FileNotFoundError:
+            pass

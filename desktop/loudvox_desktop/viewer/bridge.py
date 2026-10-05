@@ -28,6 +28,8 @@ from .reader import ParagraphReader
 class ViewerApi:
     def __init__(self, initial_path: str | None = None):
         self.cfg = load_config()
+        if not self.cfg.remember_recents:
+            recents.clear()  # privacidad: sin historial, se purga lo que hubiera
         self._window = None  # se setea después de create_window
         self._docs: dict[str, list[str]] = {}  # cache path -> párrafos
         self._initial_path = initial_path
@@ -67,7 +69,7 @@ class ViewerApi:
             self._initial_path = None
         return {
             "strings": strings_for(lang),
-            "recents": recents.existing(),
+            "recents": self.get_recents(),
             "initial": initial,
         }
 
@@ -92,7 +94,8 @@ class ViewerApi:
             return {"ok": False, "path": str(p), "title": p.name,
                     "error": str(exc)}
         self._docs[str(p)] = paragraphs
-        recents.add(str(p), p.name)
+        if self.cfg.remember_recents:
+            recents.add(str(p), p.name)
         return {"ok": True, "path": str(p), "title": p.name,
                 "paragraphs": paragraphs}
 
@@ -125,4 +128,11 @@ class ViewerApi:
         return {"ok": True}
 
     def get_recents(self):
+        if not self.cfg.remember_recents:
+            return []
         return recents.existing()
+
+    def clear_recents(self):
+        """Borra el historial de documentos abiertos (botón del visor)."""
+        recents.clear()
+        return []
